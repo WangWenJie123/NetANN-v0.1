@@ -73,6 +73,9 @@ CXXFLAGS += -I$(XF_PROJ_ROOT)/common/includes/logger
 CXXFLAGS += -I./src
 # HOST_SRCS += $(XF_PROJ_ROOT)/common/includes/cmdparser/cmdlineparser.cpp $(XF_PROJ_ROOT)/common/includes/logger/logger.cpp ./src/p2p_ssd.cpp ./src/host.cpp 
 HOST_SRCS += $(XF_PROJ_ROOT)/common/includes/cmdparser/cmdlineparser.cpp $(XF_PROJ_ROOT)/common/includes/logger/logger.cpp ./src/p2p_ssd.cpp ./src/read_vector_datasets.cpp ./src/csv_log.cpp ./src/vector_search_test_host.cpp 
+
+HOST_SRCS_TEST_SSD_IO += $(XF_PROJ_ROOT)/common/includes/cmdparser/cmdlineparser.cpp $(XF_PROJ_ROOT)/common/includes/logger/logger.cpp ./src/p2p_ssd.cpp ./src/read_vector_datasets.cpp ./src/csv_log.cpp ./src/test_ssd_io/test_ssd_io.cpp 
+
 # Host compiler global settings
 CXXFLAGS += -fmessage-length=0
 CXXFLAGS += -I/usr/local/cuda-12.1/include
@@ -90,6 +93,7 @@ VPP_FLAGS_vector_search_centroids_top_hls +=  --config ./vector_search_centroids
 VPP_LDFLAGS_vector_search_centroids_top += --config ./advanced.cfg --config ./vector_search_centroids_top.cfg
 
 EXECUTABLE = ./vector_search_test
+EXECUTABLE_TEST_SSD_IO = ./test_ssd_io
 EMCONFIG_DIR = $(TEMP_DIR)
 
 ############################## Setting Targets ##############################
@@ -99,6 +103,9 @@ all: check-platform check-device check-vitis $(EXECUTABLE) $(BUILD_DIR)/vector_s
 
 .PHONY: host
 host: $(EXECUTABLE)
+
+.PHONY: host_test_ssd_io
+host_test_ssd_io: $(EXECUTABLE_TEST_SSD_IO)
 
 .PHONY: build
 build: check-vitis check-device $(BUILD_DIR)/vector_search_kernels.xclbin
@@ -134,6 +141,9 @@ $(BUILD_DIR)/vector_search_kernels.xclbin: $(TEMP_DIR)/vector_search_centroids_t
 $(EXECUTABLE): $(HOST_SRCS) | check-xrt
 		g++ -o $@ $^ $(CXXFLAGS) $(LDFLAGS) -L/usr/local/cuda-12.1/lib64 -lcudart -fopenmp
 
+$(EXECUTABLE_TEST_SSD_IO): $(HOST_SRCS_TEST_SSD_IO) | check-xrt
+		g++ -o $@ $^ $(CXXFLAGS) $(LDFLAGS) -L/usr/local/cuda-12.1/lib64 -lcudart -fopenmp
+
 emconfig:$(EMCONFIG_DIR)/emconfig.json
 $(EMCONFIG_DIR)/emconfig.json:
 	emconfigutil --platform $(PLATFORM) --od $(EMCONFIG_DIR)
@@ -161,6 +171,9 @@ clean:
 	-$(RMDIR) $(EXECUTABLE) $(XCLBIN)/{*sw_emu*,*hw_emu*} 
 	-$(RMDIR) profile_* TempConfig system_estimate.xtxt *.rpt *.csv 
 	-$(RMDIR) src/*.ll *v++* .Xil emconfig.json dltmp* xmltmp* *.log *.jou *.wcfg *.wdb
+
+clean_test_ssd_io:
+	-$(RMDIR) $(EXECUTABLE_TEST_SSD_IO)
 
 cleanall: clean
 	-$(RMDIR) build_dir*
