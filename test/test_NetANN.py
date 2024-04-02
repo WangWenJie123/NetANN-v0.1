@@ -48,7 +48,7 @@ def main():
     for lnprobe in range(8):
         nprobe = 1 << lnprobe
         
-        NetANN_Run_Commd = "../vector_search_test -x ../vector_search_kernels.xclbin -d 0" \
+        NetANN_Run_Commd = "../vector_search_test -x ../build_dir.hw.xilinx_u200_gen3x16_xdma_2_202110_1/vector_search_kernels.xclbin -d 0" \
                             + " -s " + dataset \
                             + " -c 512" \
                             + " -m "  + str(vec_dim) \

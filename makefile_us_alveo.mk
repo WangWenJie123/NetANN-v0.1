@@ -72,7 +72,7 @@ CXXFLAGS += -I$(XF_PROJ_ROOT)/common/includes/cmdparser
 CXXFLAGS += -I$(XF_PROJ_ROOT)/common/includes/logger
 CXXFLAGS += -I./src
 # HOST_SRCS += $(XF_PROJ_ROOT)/common/includes/cmdparser/cmdlineparser.cpp $(XF_PROJ_ROOT)/common/includes/logger/logger.cpp ./src/p2p_ssd.cpp ./src/host.cpp 
-HOST_SRCS += $(XF_PROJ_ROOT)/common/includes/cmdparser/cmdlineparser.cpp $(XF_PROJ_ROOT)/common/includes/logger/logger.cpp ./src/p2p_ssd.cpp ./src/read_vector_datasets.cpp ./src/csv_log.cpp ./src/vector_search_test_host.cpp 
+HOST_SRCS += $(XF_PROJ_ROOT)/common/includes/cmdparser/cmdlineparser.cpp $(XF_PROJ_ROOT)/common/includes/logger/logger.cpp ./src/p2p_ssd.cpp ./src/read_vector_datasets.cpp ./src/csv_log.cpp ./src/read_vector_datasets.cpp ./src/kernel_manager.cpp ./src/vector_search_test_host_pipline.cpp 
 
 HOST_SRCS_TEST_SSD_IO += $(XF_PROJ_ROOT)/common/includes/cmdparser/cmdlineparser.cpp $(XF_PROJ_ROOT)/common/includes/logger/logger.cpp ./src/p2p_ssd.cpp ./src/read_vector_datasets.cpp ./src/csv_log.cpp ./src/test_ssd_io/test_ssd_io.cpp 
 
