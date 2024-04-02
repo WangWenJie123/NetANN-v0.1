@@ -86,7 +86,7 @@ uint8_t test_cop_cpu_rssd(uint8_t type, const char* fname)
     // allocate buffer on host memory
     size_t buffer_size_bytes = 10000 * 128 * sizeof(int);
     int* vec_buffer = (int*)malloc(buffer_size_bytes);
-    std::fill(vec_buffer, vec_buffer + 10000 * 28, 0);
+    std::fill(vec_buffer, vec_buffer + 10000 * 128, 0);
 
     switch (type)
     {
@@ -178,7 +178,7 @@ uint8_t test_cop_gpu_lssd(uint8_t type, const char* fname)
     // allocate buffer on host memory
     size_t buffer_size_bytes = 10000 * 128 * sizeof(int);
     int* vec_buffer = (int*)malloc(buffer_size_bytes);
-    std::fill(vec_buffer, vec_buffer + 10000 * 28, 0);
+    std::fill(vec_buffer, vec_buffer + 10000 * 128, 0);
 
     // allocate buffer on GPU memory
     int* gpu_buffer = NULL;
@@ -277,7 +277,7 @@ uint8_t test_cop_gpu_rssd(uint8_t type, const char* fname)
     // allocate buffer on host memory
     size_t buffer_size_bytes = 10000 * 128 * sizeof(int);
     int* vec_buffer = (int*)malloc(buffer_size_bytes);
-    std::fill(vec_buffer, vec_buffer + 10000 * 28, 0);
+    std::fill(vec_buffer, vec_buffer + 10000 * 128, 0);
 
     // allocate buffer on GPU memory
     int* gpu_buffer = NULL;
@@ -580,8 +580,8 @@ int main(int argc, char* argv[])
     // test_NetANN_R(read_type, vec_dataset_path, fpgaDevice, fpga_test_kernl);
     // test_NetANN_cpu(read_type, vec_dataset_path, fpgaDevice, fpga_test_kernl);
     // test_cop_gpu_rssd(read_type, vec_dataset_path);
-    // test_cop_gpu_lssd(read_type, vec_dataset_path);
-    test_cop_cpu_rssd(read_type, vec_dataset_path);
+    test_cop_gpu_lssd(read_type, vec_dataset_path);
+    // test_cop_cpu_rssd(read_type, vec_dataset_path);
 
     return 0;
 }

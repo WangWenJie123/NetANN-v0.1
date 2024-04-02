@@ -121,6 +121,12 @@ int main(int argc, char *argv[])
         index_map_path = "/home/wxr/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/data_reorg" + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_indexmap.dat");
         cluster_nav_path = "/home/wxr/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/data_reorg" + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_cluster_nav.dat");
     }
+    else if (parser.value("data_set") == "sift200M")
+    {
+        xb_vector_features_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_xbVec_features_reorg.dat");
+        index_map_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_indexmap.dat");
+        cluster_nav_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_cluster_nav.dat");        
+    }
     else
     {
         xb_vector_features_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("dim") + std::string("dim_xbVec_features.dat");
@@ -284,6 +290,8 @@ int main(int argc, char *argv[])
 
         fpga_oputCentroids_id.sync(XCL_BO_SYNC_BO_FROM_DEVICE);
 
+        search_topK_vec_kernelStart = std::chrono::high_resolution_clock::now();
+
         // 设置searchTopk Managers Init
         for (int j = 0; j < SEARCH_TOPK_VEC_KERNEL_NUM; j++)
         {
@@ -294,6 +302,7 @@ int main(int argc, char *argv[])
                 tasks.push_back(fpga_oputCentroids_id_map[m]);
                 original_indexs.push_back(m);
             }
+            
             vecTopkSearch_managers[j].Init(tasks, original_indexs, xq_vec_int + i * xq_vec_dim);
         }
 
@@ -316,6 +325,12 @@ int main(int argc, char *argv[])
             }
         }
 
+        search_topK_vec_kernelEnd = std::chrono::high_resolution_clock::now();
+        search_topK_vec_kernelTime = std::chrono::duration_cast<std::chrono::nanoseconds>(search_topK_vec_kernelEnd - search_topK_vec_kernelStart).count();
+        search_topK_vec_dnsduration = (double)search_topK_vec_kernelTime;
+        std::cout << "search_topK_vec_top excution latency:\t" << std::setprecision(3) << std::fixed << search_topK_vec_dnsduration << " ns" << std::endl;
+        std::cout << std::endl;
+
         // 计算完毕, 将结果同步到FPGA上, 准备下一阶段的计算
         inTopK_disList.sync(XCL_BO_SYNC_BO_TO_DEVICE);
 
@@ -336,7 +351,7 @@ int main(int argc, char *argv[])
         distribute_topK_Start = std::chrono::high_resolution_clock::now();
 
         distribute_topK_run.start();
-        // distribute_topK_run.wait();
+        distribute_topK_run.wait();
 
         distribute_topK_End = std::chrono::high_resolution_clock::now();
         distribute_topK_Time = std::chrono::duration_cast<std::chrono::nanoseconds>(distribute_topK_End - distribute_topK_Start).count();

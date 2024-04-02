@@ -1,0 +1,133 @@
+Profile Summary
+Generated on: 2024-04-02 16:59:09
+Msec since Epoch: 1712048349580
+Profiled application: vector_search_test
+Target platform: Xilinx
+Tool version: 2022.1
+XRT build version: 2.13.466
+Build version branch: 2022.1
+Build version hash: f5505e402c2ca1ffe45eb6d3a9399b23a0dc8776
+Build version date: N/A
+Target devices: 
+Flow mode: System Run
+
+TITLE:Native API Calls
+SECTION:API Calls,Native API Calls
+COLUMN:<html>API Name</html>,string,Name of Native XRT API,
+COLUMN:<html>Number<br>Of Calls</html>,int,Number of calls to API,
+COLUMN:<html>Total<br>Time (ms)</html>,float,Total execution time (in ms),
+COLUMN:<html>Minimum<br>Time (ms)</html>,float,Minimum execution time (in ms),
+COLUMN:<html>Average<br>Time (ms)</html>,float,Average execution time (in ms),
+COLUMN:<html>Maximum<br>Time (ms)</html>,float,Maximum execution time (in ms),
+ENTRY:xrt::bo::address,261,1.15651,0.000353,0.00443108,0.07431,
+ENTRY:xrt::bo::bo,33,92.9851,0.007169,2.81773,52.4357,
+ENTRY:xrt::bo::map,33,0.026684,0.000194,0.000808606,0.003142,
+ENTRY:xrt::bo::size,136,1.0263,0.000324,0.00754632,0.119265,
+ENTRY:xrt::bo::sync,136,4.86396,0.013194,0.0357644,0.111756,
+ENTRY:xrt::device::device,25,223.744,0.000281,8.94977,223.723,
+ENTRY:xrt::device::load_xclbin,1,52.3774,52.3774,52.3774,52.3774,
+ENTRY:xrt::kernel::group_id,33,0.036958,0.00027,0.00111994,0.005397,
+ENTRY:xrt::kernel::kernel,6,9.49625,0.03091,1.58271,9.13687,
+ENTRY:xrt::run::run,66,0.547178,0.001046,0.00829058,0.061158,
+ENTRY:xrt::run::start,66,0.571629,0.002909,0.00866105,0.032311,
+ENTRY:xrt::run::wait,66,5541.04,6.64027,83.9551,185.789,
+
+TITLE:Host Reads from Global Memory
+SECTION:Host Data Transfers,Host Reads from Global Memory
+COLUMN:<html>Number<br>of Reads</html>,int,Number of host reads (note: may contain OpenCL printf transfers),
+COLUMN:<html>Maximum<br>Buffer<br>Size (KB)</html>,float,Maximum buffer size of host reads,
+COLUMN:<html>Minimum<br>Buffer<br>Size (KB)</html>,float,Minimum buffer size of host reads,
+COLUMN:<html>Average<br>Buffer<br>Size (KB)</html>,float,Average buffer size of host reads: Average Size = (Total KB) / (Number of Transfers),
+COLUMN:<html>Transfer<br>Rate (MB/s)</html>,float,Rate of host reads (in MB/s): Transfer Rate = (Total Bytes) / (Total Time in us),
+COLUMN:<html>Average<br>Bandwidth<br>Utilization (%)</html>,float,Average bandwidth of host reads: Bandwidth Utilization (%) = (100 * Transfer Rate) / (Max. Theoretical Rate),
+COLUMN:<html>Maximum<br>Time (ms)</html>,float,Maximum time of a single host read,
+COLUMN:<html>Minimum<br>Time (ms)</html>,float,Minimum time of a single host read,
+COLUMN:<html>Total<br>Time (ms)</html>,float,Combined time of all host reads,
+COLUMN:<html>Average<br>Time (ms)</html>,float,Average of read durations (in ms),
+ENTRY:130,0.256,0.04,0.0416615,1.1152,inf,0.112855,0.0169,4.85653,0.0373579,
+
+TITLE:Host Writes to Global Memory
+SECTION:Host Data Transfers,Host Writes to Global Memory
+COLUMN:<html>Number<br>of Writes</html>,int,Number of host writes,
+COLUMN:<html>Maximum<br>Buffer<br>Size (KB)</html>,float,Maximum buffer size of host writes,
+COLUMN:<html>Minimum<br>Buffer<br>Size (KB)</html>,float,Minimum buffer size of host writes,
+COLUMN:<html>Average<br>Buffer<br>Size (KB)</html>,float,Average buffer size of host writes: Average Size = (Total KB) / (Number of Transfers),
+COLUMN:<html>Transfer<br>Rate (MB/s)</html>,float,Rate of host writes (in MB/s): Transfer Rate = (Total Bytes) / (Total Time in us),
+COLUMN:<html>Average<br>Bandwidth<br>Utilization (%)</html>,float,Average bandwidth of host writes: Bandwidth Utilization (%) = (100 * Transfer Rate) / (Max. Theoretical Rate),
+COLUMN:<html>Maximum<br>Time (ms)</html>,float,Maximum time of a single host write,
+COLUMN:<html>Minimum<br>Time (ms)</html>,float,Minimum time of a single host write,
+COLUMN:<html>Total<br>Time (ms)</html>,float,Combined time of all host write,
+COLUMN:<html>Average<br>Time (ms)</html>,float,Average of write durations (in ms),
+ENTRY:6,2.56,0.512,0.853333,45.013,inf,0.037366,0.013299,0.113745,0.0189575,
+
+TITLE:Top Memory Reads: Host from Global Memory
+SECTION:Host Data Transfers,Top Memory Reads
+COLUMN:<html>Start<br>Time (ms)</html>,float,Start time of read transfer (in ms),
+COLUMN:<html>Buffer<br>Size (KB)</html>,float,Size of read transfer (in KB),
+COLUMN:<html>Duration (ms)</html>,float,Duration of read transfer (in ms),
+COLUMN:<html>Reading<br>Rate (MB/s)</html>,float,Transfer rate of reads: Reading Rate = (Buffer Size) / (Duration),
+ENTRY:735.366,0.04,0.112855,0.354437,
+ENTRY:877.373,0.04,0.111932,0.35736,
+ENTRY:735.346,0.04,0.096996,0.412388,
+ENTRY:1888.92,0.04,0.081404,0.491376,
+ENTRY:1221.06,0.04,0.078998,0.506342,
+ENTRY:735.406,0.04,0.06783,0.58971,
+ENTRY:991.533,0.04,0.067488,0.592698,
+ENTRY:1308.72,0.04,0.06559,0.609849,
+ENTRY:1429.83,0.04,0.062401,0.641015,
+ENTRY:991.54,0.04,0.057689,0.693373,
+
+TITLE:Top Memory Writes: Host to Global Memory
+SECTION:Host Data Transfers,Top Memory Writes
+COLUMN:<html>Start<br>Time (ms)</html>,float,Start time of write transfer (in ms),
+COLUMN:<html>Buffer<br>Size (KB)</html>,float,Size of write transfer (in KB),
+COLUMN:<html>Duration (ms)</html>,float,Duration of write transfer (in ms),
+COLUMN:<html>Writing<br>Rate (MB/s)</html>,float,Transfer rate of writes: Writing Rate = (Buffer Size) / (Duration),
+ENTRY:623.55,0.512,0.037366,13.7023,
+ENTRY:2255.38,2.56,0.021562,118.727,
+ENTRY:630.339,0.512,0.014496,35.3201,
+ENTRY:630.381,0.512,0.013589,37.6775,
+ENTRY:630.361,0.512,0.013433,38.1151,
+ENTRY:630.4,0.512,0.013299,38.4991,
+
+Guidance Parameters
+Parameter,Element,Value,
+PLRAM_DEVICE,all,0,
+HBM_DEVICE,all,0,
+KDMA_DEVICE,all,0,
+P2P_DEVICE,all,0,
+TRACE_MEMORY,all,FIFO,
+APPLICATION_RUN_TIME_MS,all,3651.97,
+XRT_INI_SETTING,opencl_summary,0,Generation of OpenCL summary report (deprecated)
+XRT_INI_SETTING,opencl_trace,0,Generation of trace of OpenCL APIs and memory transfers
+XRT_INI_SETTING,opencl_device_counter,0,Hardware counters added to OpenCL summary file (deprecated)
+XRT_INI_SETTING,device_counters,0,Hardware counters added to summary file
+XRT_INI_SETTING,host_trace,0,Enable the top level of host trace
+XRT_INI_SETTING,native_xrt_trace,1,Generation of Native XRT API function trace
+XRT_INI_SETTING,xrt_trace,0,Generation of hardware SHIM function trace
+XRT_INI_SETTING,data_transfer_trace,off,Collection of data from PL monitors and added to summary and trace (deprecated)
+XRT_INI_SETTING,device_trace,off,Collection of data from PL monitors and added to summary and trace
+XRT_INI_SETTING,power_profile,0,Polling of power data during execution of application
+XRT_INI_SETTING,power_profile_interval_ms,20,Interval for reading power data (in ms)
+XRT_INI_SETTING,stall_trace,off,Enables hardware generation of stalls in compute units
+XRT_INI_SETTING,trace_buffer_size,1M,Size of buffer to allocate for trace (memory offload only)
+XRT_INI_SETTING,verbosity,4,Verbosity level
+XRT_INI_SETTING,continuous_trace,0,Continuous offloading of trace from memory to host
+XRT_INI_SETTING,trace_buffer_offload_interval_ms,10,Interval for reading of device data to host (in ms)
+XRT_INI_SETTING,trace_file_dump_interval_s,5,Interval for dumping files to host (in s)
+XRT_INI_SETTING,lop_trace,0,Generation of lower overhead OpenCL trace. Should not be used with other OpenCL options.
+XRT_INI_SETTING,debug_mode,batch,Debug mode (emulation only)
+XRT_INI_SETTING,aie_trace,0,Generation of AI Engine trace
+XRT_INI_SETTING,aie_trace_buffer_size,8M,Size of buffer to allocate for AI Engine trace
+XRT_INI_SETTING,aie_trace_metrics,functions,Configuration level used for AI Engine trace
+XRT_INI_SETTING,aie_trace_periodic_offload,1,Periodic offloading of aie trace from memory to host
+XRT_INI_SETTING,aie_trace_buffer_offload_interval_ms,10,Interval for reading of device aie trace data to host (in ms)
+XRT_INI_SETTING,aie_trace_file_dump_interval_s,5,Interval for dumping aie trace files to host (in s)
+XRT_INI_SETTING,aie_profile,0,Generation of AI Engine profiling
+XRT_INI_SETTING,aie_profile_interval_us,1000,Interval for reading AI Engine profile counters (in us)
+XRT_INI_SETTING,aie_profile_core_metrics,,Metric set for AI Engine core modules
+XRT_INI_SETTING,aie_profile_memory_metrics,,Metric set for AI Engine memory modules
+XRT_INI_SETTING,aie_profile_interface_metrics,,Metric set for AI Engine interface modules
+XRT_INI_SETTING,aie_status,0,Generation of AI Engine debug/status
+XRT_INI_SETTING,aie_status_interval_us,1000,Interval for reading AI Engine debug/status registers (in us)
+XRT_INI_SETTING,vitis_ai_profile,0,Generation of Vitis AI summary and trace (Vitis AI designs only)
