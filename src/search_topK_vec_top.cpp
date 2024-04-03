@@ -81,8 +81,8 @@ void search_topK_vec_top(TYPE* local_in_xq_vector, TYPE* mem_CentroidsVector, in
 #pragma HLS INTERFACE s_axilite port = nprobe
 #pragma HLS INTERFACE ap_ctrl_chain port = return
 
-#pragma HLS cache port=local_in_xq_vector lines=8 depth=32
-#pragma HLS cache port=mem_CentroidsVector lines=8 depth=32 
+#pragma HLS cache port=local_in_xq_vector lines=64 depth=128 
+#pragma HLS cache port=mem_CentroidsVector lines=64 depth=128 
 
     // static hls::stream<int> local_xqVector("local_xqVector");
     // static hls::stream<int> local_centroidsVector("local_centroidsVector");

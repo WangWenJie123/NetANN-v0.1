@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <thread>
+#include <vector>
 
 // XRT includes
 #include "experimental/xrt_bo.h"
@@ -510,29 +511,68 @@ uint8_t test_NetANN_R(uint8_t type, const char* fname, xrtDeviceHandle device, x
         for(int vec_num = 1; vec_num <= 10000; vec_num *= 2)
         {
             int read_vec_index[vec_num];
+            std::vector<int> continus_vec; 
             for(int index = 0; index < vec_num; index++)
             {
                 read_vec_index[index] = get_random_vecid(0, 1000);
             }
 
-            size_t readVecSize_bytes_1 = 128 * sizeof(int);
-
-            readVec_start_1 = std::chrono::high_resolution_clock::now();
-            #pragma omp parallel for
-            for(int read_index = 0; read_index < vec_num; read_index++)
+            // index is continues?
+            int tmp = read_vec_index[0];
+            int continus_num = 0;
+            if(vec_num > 1)
             {
-                // if(pread(nvme_fd, (void*)(fpga_p2p_buffer_map + read_index * 128), readVecSize_bytes_1, read_vec_index[read_index] * 128) == -1)
-                if(pread(nvme_fd, (void*)(fpga_p2p_buffer_map + read_index * 128), readVecSize_bytes_1, 0) == -1)
+                for(int i = 1; i < vec_num; i++)
                 {
-                    std::cout << "P2P: ssd to fpga, err line: " << __LINE__ << std::endl;
+                    if(read_vec_index[i] == tmp || read_vec_index[i] == (tmp + 1))
+                    {
+                        continus_num++;
+                        tmp = read_vec_index[i];
+                    }
+                    else
+                    {
+                        continus_vec.push_back(continus_num);
+                        continus_num = 0;
+                        tmp = read_vec_index[i];
+                    }
                 }
+                continus_vec.push_back(continus_num);
             }
-            readVec_end_1 = std::chrono::high_resolution_clock::now();
+            
+            if(vec_num < 2)
+            {
+                size_t readVecSize_bytes_1 = 128 * sizeof(int);
+
+                readVec_start_1 = std::chrono::high_resolution_clock::now();
+                #pragma omp parallel for
+                for(int read_index = 0; read_index < vec_num; read_index++)
+                {
+                    // if(pread(nvme_fd, (void*)(fpga_p2p_buffer_map + read_index * 128), readVecSize_bytes_1, read_vec_index[read_index] * 128) == -1)
+                    if(pread(nvme_fd, (void*)(fpga_p2p_buffer_map + read_index * 128), readVecSize_bytes_1, 0) == -1)
+                    {
+                        std::cout << "P2P: ssd to fpga, err line: " << __LINE__ << std::endl;
+                    }
+                }
+                readVec_end_1 = std::chrono::high_resolution_clock::now();
+            }
+            else
+            {
+                readVec_start_1 = std::chrono::high_resolution_clock::now();
+                for(auto item = continus_vec.begin(); item != continus_vec.end(); item++)
+                {
+                    size_t readVecSize_bytes_1 = *item * 128 * sizeof(int);
+                    if(pread(nvme_fd, (void*)fpga_p2p_buffer_map, readVecSize_bytes_1, 0) == -1)
+                    {
+                        std::cout << "P2P: ssd to fpga, err line: " << __LINE__ << std::endl;
+                    }
+                }
+                readVec_end_1 = std::chrono::high_resolution_clock::now();
+            }
             unsigned long readVec_time_1 = std::chrono::duration_cast<std::chrono::nanoseconds>(readVec_end_1 - readVec_start_1).count();
 
             double dnsduration_1 = (double)readVec_time_1;
             double dsduration_1 = dnsduration_1 / ((double)1000000000);
-            double read_bandwidth_1 = (readVecSize_bytes_1 * vec_num / dsduration_1) / ((double)1024 * 1024);
+            double read_bandwidth_1 = (128 * sizeof(int) * vec_num / dsduration_1) / ((double)1024 * 1024);
 
             eva_logger_1.write_to_csv("sift1B", "NetANN_R_Random_Read", "int", 128, vec_num, dsduration_1 * 1000, read_bandwidth_1);
         }
@@ -577,10 +617,10 @@ int main(int argc, char* argv[])
      // creating FPGA test kernel
     auto fpga_test_kernl = xrt::kernel(fpgaDevice, fpga_test_kernel_uuid, "vector_search_centroids_top");
 
-    // test_NetANN_R(read_type, vec_dataset_path, fpgaDevice, fpga_test_kernl);
+    test_NetANN_R(read_type, vec_dataset_path, fpgaDevice, fpga_test_kernl);
     // test_NetANN_cpu(read_type, vec_dataset_path, fpgaDevice, fpga_test_kernl);
     // test_cop_gpu_rssd(read_type, vec_dataset_path);
-    test_cop_gpu_lssd(read_type, vec_dataset_path);
+    // test_cop_gpu_lssd(read_type, vec_dataset_path);
     // test_cop_cpu_rssd(read_type, vec_dataset_path);
 
     return 0;

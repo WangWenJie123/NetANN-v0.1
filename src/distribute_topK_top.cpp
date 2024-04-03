@@ -10,7 +10,7 @@
 extern "C" 
 {
 
-void distribute_topK_top(int* inL2DisList, int* ouTopkVecId, unsigned int nprobe, unsigned int topk)
+void distribute_topK_top(int* inL2DisList, int* ouTopkVecId, int* sort_tmp, unsigned int nprobe, unsigned int topk)
 {
 #pragma HLS INTERFACE m_axi port = inL2DisList offset = slave bundle = gmem1
 #pragma HLS INTERFACE m_axi port = ouTopkVecId offset = slave bundle = gmem1
@@ -20,11 +20,11 @@ void distribute_topK_top(int* inL2DisList, int* ouTopkVecId, unsigned int nprobe
 #pragma HLS INTERFACE s_axilite port = topk
 #pragma HLS INTERFACE ap_ctrl_chain port = return
 
-// #pragma HLS cache port=inL2DisList lines=8 depth=32 
+#pragma HLS cache port=inL2DisList lines=64 depth=128 
 
-    int sort_tmp[MAX_VEC_NUM];
+    // int sort_tmp[MAX_VEC_NUM];
 // #pragma HLS bind_storage variable=sort_tmp impl=lutram
-#pragma HLS ARRAY_RESHAPE variable=sort_tmp type=block factor=2 dim=1
+// #pragma HLS ARRAY_RESHAPE variable=sort_tmp type=block factor=2 dim=1
 
     int num_vecs = nprobe * topk;
 
