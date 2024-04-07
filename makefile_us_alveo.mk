@@ -76,6 +76,8 @@ HOST_SRCS += $(XF_PROJ_ROOT)/common/includes/cmdparser/cmdlineparser.cpp $(XF_PR
 
 HOST_SRCS_TEST_SSD_IO += $(XF_PROJ_ROOT)/common/includes/cmdparser/cmdlineparser.cpp $(XF_PROJ_ROOT)/common/includes/logger/logger.cpp ./src/p2p_ssd.cpp ./src/read_vector_datasets.cpp ./src/csv_log.cpp ./src/test_ssd_io/test_ssd_io.cpp 
 
+HOST_SRCS_TEST_SEARCH += $(XF_PROJ_ROOT)/common/includes/cmdparser/cmdlineparser.cpp $(XF_PROJ_ROOT)/common/includes/logger/logger.cpp ./src/p2p_ssd.cpp ./src/read_vector_datasets.cpp ./src/csv_log.cpp ./src/read_vector_datasets.cpp ./src/kernel_manager.cpp ./src/vector_search_test_host.cpp 
+
 # Host compiler global settings
 CXXFLAGS += -fmessage-length=0
 CXXFLAGS += -I/usr/local/cuda-12.1/include
@@ -93,6 +95,7 @@ VPP_FLAGS_vector_search_centroids_top_hls +=  --config ./vector_search_centroids
 VPP_LDFLAGS_vector_search_centroids_top += --config ./advanced.cfg --config ./vector_search_centroids_top.cfg
 
 EXECUTABLE = ./vector_search_test
+EXECUTABLE_TEST_SEARCH = ./vector_search_test_search
 EXECUTABLE_TEST_SSD_IO = ./test_ssd_io
 EMCONFIG_DIR = $(TEMP_DIR)
 
@@ -103,6 +106,9 @@ all: check-platform check-device check-vitis $(EXECUTABLE) $(BUILD_DIR)/vector_s
 
 .PHONY: host
 host: $(EXECUTABLE)
+
+.PHONY: host_test_search
+host_test_search: $(EXECUTABLE_TEST_SEARCH)
 
 .PHONY: host_test_ssd_io
 host_test_ssd_io: $(EXECUTABLE_TEST_SSD_IO)
@@ -144,6 +150,9 @@ $(EXECUTABLE): $(HOST_SRCS) | check-xrt
 $(EXECUTABLE_TEST_SSD_IO): $(HOST_SRCS_TEST_SSD_IO) | check-xrt
 		g++ -o $@ $^ $(CXXFLAGS) $(LDFLAGS) -L/usr/local/cuda-12.1/lib64 -lcudart -fopenmp
 
+$(EXECUTABLE_TEST_SEARCH): $(HOST_SRCS_TEST_SEARCH) | check-xrt
+		g++ -o $@ $^ $(CXXFLAGS) $(LDFLAGS) -L/usr/local/cuda-12.1/lib64 -lcudart -fopenmp
+
 emconfig:$(EMCONFIG_DIR)/emconfig.json
 $(EMCONFIG_DIR)/emconfig.json:
 	emconfigutil --platform $(PLATFORM) --od $(EMCONFIG_DIR)
@@ -174,6 +183,9 @@ clean:
 
 clean_test_ssd_io:
 	-$(RMDIR) $(EXECUTABLE_TEST_SSD_IO)
+
+clean_test_search:
+	-$(RMDIR) $(EXECUTABLE_TEST_SEARCH)
 
 cleanall: clean
 	-$(RMDIR) build_dir*

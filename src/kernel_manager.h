@@ -10,7 +10,7 @@
 #include "rapidcsv.h"
 #include <atomic>
 
-#define MAX_SEARCHTOPK_VECS_NUM 61440
+#define MAX_SEARCHTOPK_VECS_NUM 31440
 
 enum class searchTopK_KernelManagerState {
     IDLE, EXCUTING
@@ -22,6 +22,7 @@ private:
     xrt::queue kernel_queue;
 
     xrt::kernel kernel;
+    xrt::run kernel_run;
     xrt::bo search_topK_vec_XqVector;
     int* search_topK_vec_XqVector_map;
 
@@ -57,12 +58,12 @@ private:
     std::string dataset_name;
     int xb_vector_features_fd;
     int* cluster_nav_data;
+    int* cluster_size_data;
 
     // Task Info
     std::vector<int> cluster_ids;
     // 似乎通过携带原始索引来确定写入位置的方式比较好
     std::vector<int> original_indexs;
-    rapidcsv::Document& invlist_index_csv;
     int next_task_ind = -1;
     int curr_ping_ind = -1;
     int curr_pong_ind = -1;
@@ -115,11 +116,11 @@ private:
     void _Set_Manager_State(searchTopK_KernelManagerState new_state);
     searchTopK_KernelManagerState _Get_Manager_State();
     void _Read_Xb(int* fpga_mem, int* ssd_mmap, const std::vector<int> invlist_item);
-    void _Read_Xb_reorg(int *fpga_mem, int xb_fd, int vector_num, int nav_point);
+    void inline _Read_Xb_reorg(int *fpga_mem, int xb_fd, int vector_num, int nav_point);
 
 public:
     // searchTopK_KernelManager() = delete;
-    searchTopK_KernelManager(std::string id, int topk, int vector_dim, std::string dataset_name, int xb_vector_features_fd, int* cluster_nav_data, int* distribute_topK_ids, int* distribute_topK_dis, rapidcsv::Document& invlist_index_csv, xrt::device& fpga_device, xrt::uuid& kernel_uuid);
+    searchTopK_KernelManager(std::string id, int topk, int vector_dim, std::string dataset_name, int xb_vector_features_fd, int* cluster_nav_data, int* distribute_topK_ids, int* distribute_topK_dis, int* cluster_size_data, xrt::device& fpga_device, xrt::uuid& kernel_uuid);
 
     void Init(const std::vector<int>& tasks, const std::vector<int>& original_indexs, int* xq_vec_int); // 控制线程调用, 设置当前kernel的任务
     void Next(); // 控制线程调用，推进任务执行

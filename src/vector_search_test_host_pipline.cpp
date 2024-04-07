@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <thread>
+#include <algorithm>
 
 // XRT includes
 #include "experimental/xrt_bo.h"
@@ -26,6 +27,17 @@
 #include "rapidcsv.h"
 #include "kernel_manager.h"
 
+struct taskInfo
+{
+    int cluster_id;
+    int cluster_size;
+    int original_index;
+    bool operator < (const taskInfo& other) const
+    {
+        return cluster_size > other.cluster_size;
+    }
+};
+
 #define BENCHMARK_TEST
 
 
@@ -35,7 +47,7 @@ std::string sift1M_xq_vec_fname = "sift_query.fvecs";
 std::string gist_xq_vec_fname = "gist_query.fvecs";
 std::string sift200M_xq_vec_fname = "bigann_query.bvecs";
 
-#define SEARCH_TOPK_VEC_KERNEL_NUM 4
+#define SEARCH_TOPK_VEC_KERNEL_NUM 6
 
 int main(int argc, char *argv[])
 {
@@ -53,6 +65,8 @@ int main(int argc, char *argv[])
     std::string index_map_path;
     // 数据重组——聚类起始位置
     std::string cluster_nav_path;
+    // IVF索引——每个聚类中包含向量个数
+    std::string cluster_size_path;
 
     size_t xq_vec_dim = 0;
     size_t xq_vec_num = 0;
@@ -117,9 +131,9 @@ int main(int argc, char *argv[])
 
     if (parser.value("data_set") == "sift1M")
     {
-        xb_vector_features_path = "/home/wxr/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/data_reorg" + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_xbVec_features_reorg.dat");
-        index_map_path = "/home/wxr/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/data_reorg" + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_indexmap.dat");
-        cluster_nav_path = "/home/wxr/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/data_reorg" + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_cluster_nav.dat");
+        xb_vector_features_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_xbVec_features_reorg.dat");
+        index_map_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_indexmap.dat");
+        cluster_nav_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_cluster_nav.dat");
     }
     else if (parser.value("data_set") == "sift200M")
     {
@@ -131,6 +145,8 @@ int main(int argc, char *argv[])
     {
         xb_vector_features_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("dim") + std::string("dim_xbVec_features.dat");
     }
+
+    cluster_size_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_cluster_size.dat");
 
     int *xq_vec_int = nullptr;
 
@@ -208,9 +224,9 @@ int main(int argc, char *argv[])
     }
 
     // IVF索引CSV
-    std::cout << "Loading CSV\n";
-    rapidcsv::Document invlist_index_csv(cluster_invlists_indexs_path.c_str() ,rapidcsv::LabelParams(-1, -1));
-    std::cout << "Complete CSV\n";
+    // std::cout << "Loading CSV\n";
+    // rapidcsv::Document invlist_index_csv(cluster_invlists_indexs_path.c_str() ,rapidcsv::LabelParams(-1, -1));
+    // std::cout << "Complete CSV\n";
 
     // 向量数据文件
     xb_vector_features_fd = open(xb_vector_features_path.c_str(), O_RDONLY | O_DIRECT);
@@ -227,6 +243,7 @@ int main(int argc, char *argv[])
 
     xrt::bo inTopK_disList = xrt::bo(fpgaDevice, NPROBE * TOPK * sizeof(int), fpga_distribute_topK_kernel.group_id(0));
     xrt::bo outTopK_vecId = xrt::bo(fpgaDevice, TOPK * sizeof(int), fpga_distribute_topK_kernel.group_id(1));
+    xrt::bo sort_tmp = xrt::bo(fpgaDevice, NPROBE * TOPK * sizeof(int), fpga_distribute_topK_kernel.group_id(2));
     int *inTopK_disList_map = inTopK_disList.map<int *>(); // Map
     int *outTopK_vecId_map = outTopK_vecId.map<int *>(); // Map
     int inTopK_idList[NPROBE * TOPK] {}; // 不用放入FPGA中计算, 仅用于最终结果展示
@@ -251,12 +268,25 @@ int main(int argc, char *argv[])
     int *index_map_data = new int[mmap_xb_vector_features_len / sizeof(int) / VECTOR_DIM];
     read(index_map_fd, (void *)index_map_data, mmap_xb_vector_features_len / VECTOR_DIM);
 
+    // 聚类内向量数量数据读取
+    int cluster_size_fd = open(cluster_size_path.c_str(), O_RDONLY);
+    if (cluster_size_fd < 0)
+    {
+        std::cerr << "ERROR: open " << cluster_size_path << " failed!" << std::endl;
+        return EXIT_FAILURE;
+    }
+    int *cluster_size_data = new int[NUM_CENTROID];
+    read(cluster_size_fd, (void *)cluster_size_data, NUM_CENTROID * sizeof(int));
+
+
     // 聚类内距离计算kernel
     searchTopK_KernelManager vecTopkSearch_managers[SEARCH_TOPK_VEC_KERNEL_NUM] = {
-        searchTopK_KernelManager("1", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, invlist_index_csv, fpgaDevice, vecSearCentroids_uuid),
-        searchTopK_KernelManager("2", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, invlist_index_csv, fpgaDevice, vecSearCentroids_uuid),
-        searchTopK_KernelManager("3", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, invlist_index_csv, fpgaDevice, vecSearCentroids_uuid),
-        searchTopK_KernelManager("4", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, invlist_index_csv, fpgaDevice, vecSearCentroids_uuid)
+        searchTopK_KernelManager("1", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("2", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("3", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("4", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("5", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("6", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid)
     };
 
     for (size_t i = 0; i < TEST_SEARCH_VEC_NUM; i++)
@@ -292,19 +322,71 @@ int main(int argc, char *argv[])
 
         search_topK_vec_kernelStart = std::chrono::high_resolution_clock::now();
 
+        std::vector<taskInfo> taskInfos(NPROBE);
+        for (int j = 0; j < NPROBE; j++)
+        {
+            taskInfos[j].cluster_id = fpga_oputCentroids_id_map[j];
+            taskInfos[j].cluster_size = cluster_size_data[fpga_oputCentroids_id_map[j]];
+            taskInfos[j].original_index = j;
+        }
+        sort(taskInfos.begin(), taskInfos.end());
+
         // 设置searchTopk Managers Init
         for (int j = 0; j < SEARCH_TOPK_VEC_KERNEL_NUM; j++)
         {
             // 分配kernel上计算的聚类
             std::vector<int> tasks, original_indexs;
-            for (int m = j; m < NPROBE; m += SEARCH_TOPK_VEC_KERNEL_NUM)
+            int round = 0;
+            while (true)
             {
-                tasks.push_back(fpga_oputCentroids_id_map[m]);
-                original_indexs.push_back(m);
+                int target_index = round * SEARCH_TOPK_VEC_KERNEL_NUM;
+                if (round % 2 == 0)
+                {
+                    target_index += j;
+                }
+                else
+                {
+                    target_index += SEARCH_TOPK_VEC_KERNEL_NUM - j - 1;
+                }
+                if (target_index >= NPROBE)
+                {
+                    break;
+                }
+                ++round;
+                tasks.push_back(taskInfos[target_index].cluster_id);
+                original_indexs.push_back(taskInfos[target_index].original_index);
             }
+            // 打印分配结果
+            // std::cout << "searchTopK_vec_top kernel " << j << " tasks: \n";
+            // for (int k = 0; k < tasks.size(); k++)
+            // {
+            //     std::cout << tasks[k] << ":\t" << cluster_size_data[tasks[k]] << std::endl;
+            // }
+
             
             vecTopkSearch_managers[j].Init(tasks, original_indexs, xq_vec_int + i * xq_vec_dim);
         }
+
+        // // 设置searchTopk Managers Init
+        // for (int j = 0; j < SEARCH_TOPK_VEC_KERNEL_NUM; j++)
+        // {
+        //     // 分配kernel上计算的聚类
+        //     std::vector<int> tasks, original_indexs;
+        //     for (int m = j; m < NPROBE; m += SEARCH_TOPK_VEC_KERNEL_NUM)
+        //     {
+        //         tasks.push_back(fpga_oputCentroids_id_map[m]);
+        //         original_indexs.push_back(m);
+        //     }
+            
+        //     // 打印分配结果
+        //     std::cout << "searchTopK_vec_top kernel " << j << " tasks: \n";
+        //     for (int k = 0; k < tasks.size(); k++)
+        //     {
+        //         std::cout << tasks[k] << ":\t" << cluster_size_data[tasks[k]] << std::endl;
+        //     }
+
+        //     vecTopkSearch_managers[j].Init(tasks, original_indexs, xq_vec_int + i * xq_vec_dim);
+        // }
 
         // 主线程开始轮询Manager是否完成计算, 并控制Load Compute Store流水的推进
         int kernel_complete_cnt = 0;
@@ -343,8 +425,9 @@ int main(int argc, char *argv[])
         distribute_topK_run = xrt::run(fpga_distribute_topK_kernel);
         distribute_topK_run.set_arg(0, inTopK_disList);
         distribute_topK_run.set_arg(1, outTopK_vecId);
-        distribute_topK_run.set_arg(2, NPROBE);
-        distribute_topK_run.set_arg(3, TOPK);
+        distribute_topK_run.set_arg(2, sort_tmp);
+        distribute_topK_run.set_arg(3, NPROBE);
+        distribute_topK_run.set_arg(4, TOPK);
 
         // Execution of the kernel
         std::cout << "Execution of the distribute_topK_kernel" << std::endl;

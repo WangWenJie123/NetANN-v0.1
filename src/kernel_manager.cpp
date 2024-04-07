@@ -10,26 +10,27 @@
 #include <atomic>
 #include <cstring>
 
-searchTopK_KernelManager::searchTopK_KernelManager(std::string id, int topk, int vector_dim, std::string dataset_name, int xb_vector_features_fd, int* cluster_nav_data, int* distribute_topK_ids, int* distribute_topK_dis, rapidcsv::Document& invlist_index_csv, xrt::device& fpga_device, xrt::uuid& kernel_uuid) : TOPK(topk), VECTOR_DIM(vector_dim), invlist_index_csv(invlist_index_csv), dataset_name(dataset_name), xb_vector_features_fd(xb_vector_features_fd), distribute_topK_ids(distribute_topK_ids), distribute_topK_dis(distribute_topK_dis), cluster_nav_data(cluster_nav_data)
+searchTopK_KernelManager::searchTopK_KernelManager(std::string id, int topk, int vector_dim, std::string dataset_name, int xb_vector_features_fd, int* cluster_nav_data, int* distribute_topK_ids, int* distribute_topK_dis, int* cluster_size_data, xrt::device& fpga_device, xrt::uuid& kernel_uuid) : TOPK(topk), VECTOR_DIM(vector_dim), cluster_size_data(cluster_size_data), dataset_name(dataset_name), xb_vector_features_fd(xb_vector_features_fd), distribute_topK_ids(distribute_topK_ids), distribute_topK_dis(distribute_topK_dis), cluster_nav_data(cluster_nav_data)
 {
 
     xrt::bo::flags p2p_flag = xrt::bo::flags::p2p;
 
     std::string kernel_name = std::string("search_topK_vec_top") + ":{" + "search_topK_vec_top_" + id + "}";
     kernel = xrt::kernel(fpga_device, kernel_uuid, kernel_name.c_str());
+    kernel_run = xrt::run(kernel);
 
     search_topK_vec_XqVector = xrt::bo(fpga_device, VECTOR_DIM * sizeof(int), kernel.group_id(0));
 
 
     // 每次都要将全量数据传输至FPGA上，FPGA内存有限，会限制并行kernel数量？
     search_topK_vec_xbVector_ping = xrt::bo(fpga_device, MAX_SEARCHTOPK_VECS_NUM * VECTOR_DIM * sizeof(int), p2p_flag, kernel.group_id(1)); // Xb数据读取量大，写入量大，为重点优化目标，故pingpong分开memory bank
-    search_topK_vec_xbVector_pong = xrt::bo(fpga_device, MAX_SEARCHTOPK_VECS_NUM * VECTOR_DIM * sizeof(int), p2p_flag, kernel.group_id(2));
+    search_topK_vec_xbVector_pong = xrt::bo(fpga_device, MAX_SEARCHTOPK_VECS_NUM * VECTOR_DIM * sizeof(int), p2p_flag, kernel.group_id(1));
 
-    search_topK_vec_out_topK_Vector_ping = xrt::bo(fpga_device, TOPK * sizeof(int), kernel.group_id(0));
-    search_topK_vec_out_topK_Vector_pong = xrt::bo(fpga_device, TOPK * sizeof(int), kernel.group_id(0));
+    search_topK_vec_out_topK_Vector_ping = xrt::bo(fpga_device, TOPK * sizeof(int), kernel.group_id(2));
+    search_topK_vec_out_topK_Vector_pong = xrt::bo(fpga_device, TOPK * sizeof(int), kernel.group_id(2));
 
-    search_topK_vec_out_topK_dis_ping = xrt::bo(fpga_device, TOPK * sizeof(int), kernel.group_id(0));
-    search_topK_vec_out_topK_dis_pong = xrt::bo(fpga_device, TOPK * sizeof(int), kernel.group_id(0));
+    search_topK_vec_out_topK_dis_ping = xrt::bo(fpga_device, TOPK * sizeof(int), kernel.group_id(6));
+    search_topK_vec_out_topK_dis_pong = xrt::bo(fpga_device, TOPK * sizeof(int), kernel.group_id(6));
 
     // 内存映射
     search_topK_vec_XqVector_map = search_topK_vec_XqVector.map<int *>();
@@ -125,15 +126,17 @@ void searchTopK_KernelManager::Next()
             int tmp_curr_ping_ind = curr_ping_ind;
             // 提交复制任务到队列中
             search_topK_vec_xbVector_ping_queue.enqueue([tmp_curr_ping_ind, this] {
-                std::vector<int> vec_ids = invlist_index_csv.GetRow<int>(cluster_ids[tmp_curr_ping_ind]);
-                search_topK_vec_xbVector_ping_num = vec_ids.size();
+                // std::vector<int> vec_ids = invlist_index_csv.GetRow<int>(cluster_ids[tmp_curr_ping_ind]);
+                // search_topK_vec_xbVector_ping_num = std::min(int(vec_ids.size()),MAX_SEARCHTOPK_VECS_NUM);
+                search_topK_vec_xbVector_ping_num = std::min(cluster_size_data[cluster_ids[tmp_curr_ping_ind]], MAX_SEARCHTOPK_VECS_NUM);
+                // search_topK_vec_xbVector_ping_num = 1000;
+                // std::cout << "Invlist Vector Num:" << search_topK_vec_xbVector_ping_num << std::endl;
 
-                std::cout << "Invlist Vector Num:" << search_topK_vec_xbVector_ping_num << std::endl;
-
-                std::cout << "Before Ping Xb Copy! Task Ind:" << tmp_curr_ping_ind << "\n";
+                // std::cout << "Before Ping Xb Copy! Task Ind:" << tmp_curr_ping_ind << "\n";
                 // _Read_Xb(search_topK_vec_xbVector_ping_map, xb_vector_features_mmap, vec_ids);
+                // _Read_Xb_reorg(search_topK_vec_xbVector_ping_map, xb_vector_features_fd, search_topK_vec_xbVector_ping_num, cluster_nav_data[cluster_ids[tmp_curr_ping_ind]]);
                 _Read_Xb_reorg(search_topK_vec_xbVector_ping_map, xb_vector_features_fd, search_topK_vec_xbVector_ping_num, cluster_nav_data[cluster_ids[tmp_curr_ping_ind]]);
-                std::cout << "Ping Xb Copy Complete! Task Ind:" << tmp_curr_ping_ind << "\n";
+                // std::cout << "Ping Xb Copy Complete! Task Ind:" << tmp_curr_ping_ind << "\n";
                 xb_ping_ready = true;
             });
         }
@@ -151,12 +154,16 @@ void searchTopK_KernelManager::Next()
 
             // 提交复制任务到队列中
             search_topK_vec_xbVector_pong_queue.enqueue([tmp_curr_pong_ind, this] {
-                std::vector<int> vec_ids = invlist_index_csv.GetRow<int>(cluster_ids[tmp_curr_pong_ind]);
-                search_topK_vec_xbVector_pong_num = vec_ids.size();
-                std::cout << "Before Pong Xb Copy! Task Ind:" << tmp_curr_pong_ind << "\n";
+                // std::vector<int> vec_ids = invlist_index_csv.GetRow<int>(cluster_ids[tmp_curr_pong_ind]);
+                // search_topK_vec_xbVector_pong_num = std::min(int(vec_ids.size()),MAX_SEARCHTOPK_VECS_NUM);
+                search_topK_vec_xbVector_pong_num = std::min(cluster_size_data[cluster_ids[tmp_curr_pong_ind]], MAX_SEARCHTOPK_VECS_NUM);
+                // search_topK_vec_xbVector_pong_num = 1000;
+                // std::cout << "Invlist Vector Num:" << search_topK_vec_xbVector_pong_num << std::endl;
+                // std::cout << "Before Pong Xb Copy! Task Ind:" << tmp_curr_pong_ind << "\n";
                 // _Read_Xb(search_topK_vec_xbVector_pong_map, xb_vector_features_mmap, vec_ids);
                 _Read_Xb_reorg(search_topK_vec_xbVector_pong_map, xb_vector_features_fd, search_topK_vec_xbVector_pong_num, cluster_nav_data[cluster_ids[tmp_curr_pong_ind]]);
-                std::cout << "Pong Xb Copy Complete! Task Ind:" << tmp_curr_pong_ind << "\n";
+                // _Read_Xb_reorg(search_topK_vec_xbVector_pong_map, xb_vector_features_fd, search_topK_vec_xbVector_pong_num, cluster_nav_data[cluster_ids[tmp_curr_pong_ind]]);
+                // std::cout << "Pong Xb Copy Complete! Task Ind:" << tmp_curr_pong_ind << "\n";
                 xb_pong_ready = true;
             });
         }
@@ -174,25 +181,30 @@ void searchTopK_KernelManager::Next()
                 // 尝试提交pong的数据
                 if (xb_pong_ready && xb_pong_reading && !result_dis_pong_writing && !result_dis_pong_ready && !result_id_pong_ready && !result_id_pong_writing)
                 {
+                    // std::cout << "[Kernel Running] Submit Pong Data!\n";
                     xb_pong_reading = false;
                     result_dis_pong_writing = true;
                     result_id_pong_writing = true;
                     last_kernel_submit_ping = false;
+
+                    kernel_running = true;
+
                     kernel_queue.enqueue([this]{
                         kernel_running_ping = false;
                         kernel_running = true;
 
-                        xrt::run run = xrt::run(kernel);
-                        run.set_arg(0, search_topK_vec_XqVector);
-                        run.set_arg(1, search_topK_vec_xbVector_pong);
-                        run.set_arg(2, search_topK_vec_out_topK_Vector_pong);
-                        run.set_arg(3, search_topK_vec_xbVector_pong_num);
-                        run.set_arg(4, VECTOR_DIM);
-                        run.set_arg(5, TOPK);
-                        run.set_arg(6, search_topK_vec_out_topK_dis_pong);
+                        // xrt::run run = xrt::run(kernel);
+                        kernel_run.set_arg(0, search_topK_vec_XqVector);
+                        kernel_run.set_arg(1, search_topK_vec_xbVector_pong);
+                        kernel_run.set_arg(2, search_topK_vec_out_topK_Vector_pong);
+                        kernel_run.set_arg(3, search_topK_vec_xbVector_pong_num);
+                        kernel_run.set_arg(4, VECTOR_DIM);
+                        kernel_run.set_arg(5, TOPK);
+                        kernel_run.set_arg(6, search_topK_vec_out_topK_dis_pong);
 
-                        run.start();
-                        run.wait();
+                        kernel_run.start();
+                        kernel_run.wait();
+                        // std::cout << "Complete searchTopk!\n";
                         xb_pong_ready = false;
                         result_id_pong_ready = true;
                         result_dis_pong_ready = true;
@@ -208,26 +220,32 @@ void searchTopK_KernelManager::Next()
                 // 尝试提交ping的数据
                 if (xb_ping_ready && xb_ping_reading && !result_dis_ping_writing && !result_dis_ping_ready && !result_id_ping_ready && !result_id_ping_writing)
                 {
+                    // std::cout << "[Kernel Running] Submit Ping Data!\n";
                     xb_ping_reading = false;
                     result_dis_ping_writing = true;
                     result_id_ping_writing = true;
 
                     last_kernel_submit_ping = true;
+
+                    kernel_running = true;
+                
                     kernel_queue.enqueue([this]{
                         kernel_running_ping = true;
                         kernel_running = true;
 
-                        xrt::run run = xrt::run(kernel);
-                        run.set_arg(0, search_topK_vec_XqVector);
-                        run.set_arg(1, search_topK_vec_xbVector_ping);
-                        run.set_arg(2, search_topK_vec_out_topK_Vector_ping);
-                        run.set_arg(3, search_topK_vec_xbVector_ping_num);
-                        run.set_arg(4, VECTOR_DIM);
-                        run.set_arg(5, TOPK);
-                        run.set_arg(6, search_topK_vec_out_topK_dis_ping);
+                        // xrt::run run = xrt::run(kernel);
+                        kernel_run.set_arg(0, search_topK_vec_XqVector);
+                        kernel_run.set_arg(1, search_topK_vec_xbVector_ping);
+                        kernel_run.set_arg(2, search_topK_vec_out_topK_Vector_ping);
+                        kernel_run.set_arg(3, search_topK_vec_xbVector_ping_num);
+                        kernel_run.set_arg(4, VECTOR_DIM);
+                        kernel_run.set_arg(5, TOPK);
+                        kernel_run.set_arg(6, search_topK_vec_out_topK_dis_ping);
 
-                        run.start();
-                        run.wait();
+                        kernel_run.start();
+                        kernel_run.wait();
+
+                        // std::cout << "Complete searchTopk!\n";
                         xb_ping_ready = false;
                         result_id_ping_ready = true;
                         result_dis_ping_ready = true;
@@ -242,26 +260,32 @@ void searchTopK_KernelManager::Next()
         // kernel是空闲的, 则ping pong哪个数据准备好了用哪个
         if (xb_ping_ready && xb_ping_reading && !result_dis_ping_writing && !result_dis_ping_ready && !result_id_ping_ready && !result_id_ping_writing)
         {
+            // std::cout << "[Kernel Not Running] Submit Ping Data!\n";
             xb_ping_reading = false;
             result_dis_ping_writing = true;
             result_id_ping_writing = true;
             last_kernel_submit_ping = true;
+
+            kernel_running_ping = true;
+            kernel_running = true;
+
             kernel_queue.enqueue([this]{
-                kernel_running_ping = true;
+
                 kernel_running = true;
 
-                xrt::run run = xrt::run(kernel);
-                run.set_arg(0, search_topK_vec_XqVector);
-                run.set_arg(1, search_topK_vec_xbVector_ping);
-                run.set_arg(2, search_topK_vec_out_topK_Vector_ping);
-                run.set_arg(3, search_topK_vec_xbVector_ping_num);
-                run.set_arg(4, VECTOR_DIM);
-                run.set_arg(5, TOPK);
-                run.set_arg(6, search_topK_vec_out_topK_dis_ping);
+                // xrt::run run = xrt::run(kernel);
+                kernel_run.set_arg(0, search_topK_vec_XqVector);
+                kernel_run.set_arg(1, search_topK_vec_xbVector_ping);
+                kernel_run.set_arg(2, search_topK_vec_out_topK_Vector_ping);
+                kernel_run.set_arg(3, search_topK_vec_xbVector_ping_num);
+                kernel_run.set_arg(4, VECTOR_DIM);
+                kernel_run.set_arg(5, TOPK);
+                kernel_run.set_arg(6, search_topK_vec_out_topK_dis_ping);
 
-                run.start();
-                run.wait();
+                kernel_run.start();
+                kernel_run.wait();
 
+                // std::cout << "Complete searchTopk!\n";
                 xb_ping_ready = false;
                 result_id_ping_ready = true;
                 result_dis_ping_ready = true;
@@ -270,25 +294,32 @@ void searchTopK_KernelManager::Next()
         }
         else if (xb_pong_ready && xb_pong_reading && !result_dis_pong_writing && !result_dis_pong_ready && !result_id_pong_ready && !result_id_pong_writing)
         {
+            // std::cout << "[Kernel Not Running] Submit Pong Data!\n";
             xb_pong_reading = false;
             result_dis_pong_writing = true;
             result_id_pong_writing = true;
             last_kernel_submit_ping = false;
+
+            kernel_running_ping = false;
+            kernel_running = true;
+
             kernel_queue.enqueue([this]{
 
-                xrt::run run = xrt::run(kernel);
-                run.set_arg(0, search_topK_vec_XqVector);
-                run.set_arg(1, search_topK_vec_xbVector_pong);
-                run.set_arg(2, search_topK_vec_out_topK_Vector_pong);
-                run.set_arg(3, search_topK_vec_xbVector_pong_num);
-                run.set_arg(4, VECTOR_DIM);
-                run.set_arg(5, TOPK);
-                run.set_arg(6, search_topK_vec_out_topK_dis_pong);
-
-                kernel_running_ping = false;
                 kernel_running = true;
-                run.start();
-                run.wait();
+
+                // xrt::run run = xrt::run(kernel);
+                kernel_run.set_arg(0, search_topK_vec_XqVector);
+                kernel_run.set_arg(1, search_topK_vec_xbVector_pong);
+                kernel_run.set_arg(2, search_topK_vec_out_topK_Vector_pong);
+                kernel_run.set_arg(3, search_topK_vec_xbVector_pong_num);
+                kernel_run.set_arg(4, VECTOR_DIM);
+                kernel_run.set_arg(5, TOPK);
+                kernel_run.set_arg(6, search_topK_vec_out_topK_dis_pong);
+
+                kernel_run.start();
+                kernel_run.wait();
+
+                // std::cout << "Complete searchTopk!\n";
                 xb_pong_ready = false;
                 result_id_pong_ready = true;
                 result_dis_pong_ready = true;
@@ -418,7 +449,7 @@ void searchTopK_KernelManager::Next()
 
 void searchTopK_KernelManager::_Read_Xb(int *fpga_mem, int *ssd_mmap, const std::vector<int> invlist_item)
 {
-    std::cout << "In Read Xb!\n";
+    // std::cout << "In Read Xb!\n";
 
     if (dataset_name == std::string("sift200M"))
     {
@@ -438,9 +469,11 @@ void searchTopK_KernelManager::_Read_Xb(int *fpga_mem, int *ssd_mmap, const std:
     }
 }
 
-void searchTopK_KernelManager::_Read_Xb_reorg(int *fpga_mem, int xb_fd, int vector_num, int nav_point)
+void inline searchTopK_KernelManager::_Read_Xb_reorg(int *fpga_mem, int xb_fd, int vector_num, int nav_point)
 {
-    std::cout << "In Read Xb!\n";
+    // std::cout << "In Read Xb!\n";
+
+    vector_num = vector_num > MAX_SEARCHTOPK_VECS_NUM ? MAX_SEARCHTOPK_VECS_NUM : vector_num;
 
     pread(xb_fd, fpga_mem, vector_num * VECTOR_DIM * sizeof(int), nav_point * VECTOR_DIM * sizeof(int));
 }
