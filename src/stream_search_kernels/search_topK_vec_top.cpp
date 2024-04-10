@@ -134,7 +134,7 @@ static void write_topK_vectors_id(int* oputCentroids_id, hls::stream<int>& local
 /*
  * write topK vectors distance to fpga memory
 */
-static void write_topK_vectors_dis(int* out_topk_dis, int outL2dis[MAX_CENTROIDS_NUM], hls::stream<int>& local_oputCentroids_id_tmp)
+static void write_topK_vectors_dis(int* out_topk_dis, int outL2dis[MAX_CENTROIDS_NUM], hls::stream<int>& local_oputCentroids_id_tmp, unsigned int nprobe)
 {
     for(int i = 0; i < nprobe; i++)
     {
@@ -145,8 +145,7 @@ static void write_topK_vectors_dis(int* out_topk_dis, int outL2dis[MAX_CENTROIDS
 extern "C" 
 {
 
-void search_topK_vec_top(TYPE* mem_xqVector, TYPE* mem_CentroidsVector, int* oputCentroids_id, unsigned int numCentroids, unsigned int dim, unsigned int nprobe, int* out_topk_dis
-)
+void search_topK_vec_top(TYPE* mem_xqVector, TYPE* mem_CentroidsVector, int* oputCentroids_id, unsigned int numCentroids, unsigned int dim, unsigned int nprobe, int* out_topk_dis)
 {
 #pragma HLS INTERFACE m_axi port = mem_xqVector offset = slave bundle = gmem0 max_read_burst_length = 64 num_read_outstanding = 16
 #pragma HLS INTERFACE m_axi port = mem_CentroidsVector offset = slave bundle = gmem1 max_write_burst_length = 64 num_write_outstanding = 16
@@ -182,6 +181,6 @@ void search_topK_vec_top(TYPE* mem_xqVector, TYPE* mem_CentroidsVector, int* opu
     parallel_sort(outL2dis_1, outL2dis_2, sort_tmpStream, numCentroids);
     select_topK(sort_tmpStream, local_oputCentroids_id, local_oputCentroids_id_tmp, numCentroids, nprobe);
     write_topK_vectors_id(oputCentroids_id, local_oputCentroids_id, nprobe);
-    write_topK_vectors_dis(out_topk_dis, outL2dis, local_oputCentroids_id_tmp);
+    write_topK_vectors_dis(out_topk_dis, outL2dis, local_oputCentroids_id_tmp, nprobe);
 }
 }
