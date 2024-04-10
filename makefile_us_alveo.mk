@@ -115,29 +115,34 @@ host_test_ssd_io: $(EXECUTABLE_TEST_SSD_IO)
 
 .PHONY: build
 build: check-vitis check-device $(BUILD_DIR)/vector_search_kernels.xclbin
-# build: check-vitis check-device $(BUILD_DIR)/adder.xclbin
 
 .PHONY: xclbin
 xclbin: build
 
 ############################## Setting Rules for Binary Containers (Building Kernels) ##############################
-# $(TEMP_DIR)/adder.xo: src/adder.cpp
+############################## Building Memory Version Kernels ##############################
+# $(TEMP_DIR)/vector_search_centroids_top.xo: src/vector_search_centroids_top.cpp
 # 	mkdir -p $(TEMP_DIR)
-# 	v++ $(VPP_FLAGS) -c -k adder --temp_dir $(TEMP_DIR)  -I'$(<D)' -o'$@' '$<'
-$(TEMP_DIR)/vector_search_centroids_top.xo: src/vector_search_centroids_top.cpp
+# 	v++ $(VPP_FLAGS) -c $(VPP_FLAGS_vector_search_centroids_top_hls) -k vector_search_centroids_top --temp_dir $(TEMP_DIR)  -I'$(<D)' -o'$@' '$<'
+# $(TEMP_DIR)/distribute_topK_top.xo: src/distribute_topK_top.cpp
+# 	mkdir -p $(TEMP_DIR)
+# 	v++ $(VPP_FLAGS) -c $(VPP_FLAGS_vector_search_centroids_top_hls) -k distribute_topK_top --temp_dir $(TEMP_DIR)  -I'$(<D)' -o'$@' '$<'
+# $(TEMP_DIR)/search_topK_vec_top.xo: src/search_topK_vec_top.cpp
+# 	mkdir -p $(TEMP_DIR)
+# 	v++ $(VPP_FLAGS) -c $(VPP_FLAGS_vector_search_centroids_top_hls) -k search_topK_vec_top --temp_dir $(TEMP_DIR)  -I'$(<D)' -o'$@' '$<'
+
+############################## Building Stream Version Kernels ##############################
+$(TEMP_DIR)/vector_search_centroids_top.xo: src/stream_search_kernels/vector_search_centroids_top.cpp
 	mkdir -p $(TEMP_DIR)
 	v++ $(VPP_FLAGS) -c $(VPP_FLAGS_vector_search_centroids_top_hls) -k vector_search_centroids_top --temp_dir $(TEMP_DIR)  -I'$(<D)' -o'$@' '$<'
-$(TEMP_DIR)/distribute_topK_top.xo: src/distribute_topK_top.cpp
+$(TEMP_DIR)/distribute_topK_top.xo: src/stream_search_kernels/distribute_topK_top.cpp
 	mkdir -p $(TEMP_DIR)
 	v++ $(VPP_FLAGS) -c $(VPP_FLAGS_vector_search_centroids_top_hls) -k distribute_topK_top --temp_dir $(TEMP_DIR)  -I'$(<D)' -o'$@' '$<'
-$(TEMP_DIR)/search_topK_vec_top.xo: src/search_topK_vec_top.cpp
+$(TEMP_DIR)/search_topK_vec_top.xo: src/stream_search_kernels/search_topK_vec_top.cpp
 	mkdir -p $(TEMP_DIR)
 	v++ $(VPP_FLAGS) -c $(VPP_FLAGS_vector_search_centroids_top_hls) -k search_topK_vec_top --temp_dir $(TEMP_DIR)  -I'$(<D)' -o'$@' '$<'
 
-# $(BUILD_DIR)/adder.xclbin: $(TEMP_DIR)/adder.xo
-# 	mkdir -p $(BUILD_DIR)
-# 	v++ $(VPP_FLAGS) -l $(VPP_LDFLAGS) --temp_dir $(TEMP_DIR) -o'$(LINK_OUTPUT)' $(+)
-# 	v++ -p $(LINK_OUTPUT) $(VPP_FLAGS) --package.out_dir $(PACKAGE_OUT) -o $(BUILD_DIR)/adder.xclbin
+
 $(BUILD_DIR)/vector_search_kernels.xclbin: $(TEMP_DIR)/vector_search_centroids_top.xo $(TEMP_DIR)/distribute_topK_top.xo $(TEMP_DIR)/search_topK_vec_top.xo
 	mkdir -p $(BUILD_DIR)
 	v++ $(VPP_FLAGS) -l $(VPP_LDFLAGS) --temp_dir $(TEMP_DIR) $(VPP_LDFLAGS_vector_search_centroids_top) -o'$(LINK_OUTPUT)' $(+)

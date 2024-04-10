@@ -95,10 +95,10 @@ void search_topK_vec_top(TYPE* local_in_xq_vector, TYPE* mem_CentroidsVector, in
     int outL2dis[MAX_CENTROIDS_NUM];
     // int outL2dis_out[MAX_CENTROIDS_NUM];
 
-#pragma HLS ARRAY_RESHAPE variable=local_xqVector type=block factor=2 dim=1
-#pragma HLS ARRAY_RESHAPE variable=local_centroidsVector type=block factor=2 dim=1
+#pragma HLS ARRAY_RESHAPE variable=local_xqVector type=block factor=8 dim=1
+#pragma HLS ARRAY_RESHAPE variable=local_centroidsVector type=block factor=8 dim=1
 #pragma HLS ARRAY_RESHAPE variable=local_oputCentroids_id type=block factor=2 dim=1
-#pragma HLS ARRAY_RESHAPE variable=outL2dis type=block factor=2 dim=1
+#pragma HLS ARRAY_RESHAPE variable=outL2dis type=block factor=8 dim=1
 // #pragma HLS bind_storage variable=outL2dis_tmp impl=lutram
 // #pragma HLS bind_storage variable=outL2dis impl=lutram
 // #pragma HLS bind_storage variable=outL2dis_out impl=lutram
@@ -124,6 +124,7 @@ void search_topK_vec_top(TYPE* local_in_xq_vector, TYPE* mem_CentroidsVector, in
         temp = local_in_xq_vector[i];
         for (int j = 0; j < 16; j++) 
         {
+// #pragma HLS unroll factor=2
             local_xqVector[i * 16 + j] = (temp >> (32 * j)) & 0xFFFFFFFF;
         }
     }
@@ -147,6 +148,7 @@ void search_topK_vec_top(TYPE* local_in_xq_vector, TYPE* mem_CentroidsVector, in
             temp_1 = mem_CentroidsVector[i * read_q_vec_times + j];
             for (int m = 0; m < 16; m++) 
             {
+// #pragma HLS unroll factor=2
                 local_centroidsVector[j * 16 + m] = (temp_1 >> (32 * m)) & 0xFFFFFFFF;
             }
         }
@@ -155,7 +157,7 @@ void search_topK_vec_top(TYPE* local_in_xq_vector, TYPE* mem_CentroidsVector, in
         {
 #pragma HLS LOOP_TRIPCOUNT min = MAX_VECTOR_DIM max = MAX_VECTOR_DIM
 // #pragma HLS pipeline off
-#pragma HLS unroll factor=2
+#pragma HLS unroll factor=8
 
             outL2dis[i] += pow((local_xqVector[z] - local_centroidsVector[z]), 2);
             // outL2dis_tmp[i] += pow((local_xqVector.read() - local_centroidsVector.read()), 2);
