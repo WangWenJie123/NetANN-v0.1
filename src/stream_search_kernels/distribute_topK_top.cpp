@@ -75,8 +75,8 @@ extern "C"
 
 void distribute_topK_top(int* inL2DisList, int* ouTopkVecId, unsigned int nprobe, unsigned int topk)
 {
-#pragma HLS INTERFACE m_axi port = inL2DisList offset = slave bundle = gmem1
-#pragma HLS INTERFACE m_axi port = ouTopkVecId offset = slave bundle = gmem1
+#pragma HLS INTERFACE m_axi port = inL2DisList offset = slave bundle = gmem
+#pragma HLS INTERFACE m_axi port = ouTopkVecId offset = slave bundle = gmem
 #pragma HLS INTERFACE s_axilite port = inL2DisList
 #pragma HLS INTERFACE s_axilite port = ouTopkVecId
 #pragma HLS INTERFACE s_axilite port = nprobe

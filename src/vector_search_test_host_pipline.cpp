@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 
     xrt::bo inTopK_disList = xrt::bo(fpgaDevice, NPROBE * TOPK * sizeof(int), fpga_distribute_topK_kernel.group_id(0));
     xrt::bo outTopK_vecId = xrt::bo(fpgaDevice, TOPK * sizeof(int), fpga_distribute_topK_kernel.group_id(1));
-    xrt::bo sort_tmp = xrt::bo(fpgaDevice, NPROBE * TOPK * sizeof(int), fpga_distribute_topK_kernel.group_id(2));
+    // xrt::bo sort_tmp = xrt::bo(fpgaDevice, NPROBE * TOPK * sizeof(int), fpga_distribute_topK_kernel.group_id(2));
     int *inTopK_disList_map = inTopK_disList.map<int *>(); // Map
     int *outTopK_vecId_map = outTopK_vecId.map<int *>(); // Map
     int inTopK_idList[NPROBE * TOPK] {}; // 不用放入FPGA中计算, 仅用于最终结果展示
@@ -425,9 +425,9 @@ int main(int argc, char *argv[])
         distribute_topK_run = xrt::run(fpga_distribute_topK_kernel);
         distribute_topK_run.set_arg(0, inTopK_disList);
         distribute_topK_run.set_arg(1, outTopK_vecId);
-        distribute_topK_run.set_arg(2, sort_tmp);
-        distribute_topK_run.set_arg(3, NPROBE);
-        distribute_topK_run.set_arg(4, TOPK);
+        // distribute_topK_run.set_arg(2, sort_tmp);
+        distribute_topK_run.set_arg(2, NPROBE);
+        distribute_topK_run.set_arg(3, TOPK);
 
         // Execution of the kernel
         std::cout << "Execution of the distribute_topK_kernel" << std::endl;

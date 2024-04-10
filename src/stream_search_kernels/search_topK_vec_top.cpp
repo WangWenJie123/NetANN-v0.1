@@ -148,9 +148,9 @@ extern "C"
 void search_topK_vec_top(TYPE* mem_xqVector, TYPE* mem_CentroidsVector, int* oputCentroids_id, unsigned int numCentroids, unsigned int dim, unsigned int nprobe, int* out_topk_dis
 )
 {
-#pragma HLS INTERFACE m_axi port = mem_xqVector offset = slave bundle = gmem0 max_read_burst_length = 64 num_read_outstanding = 16
-#pragma HLS INTERFACE m_axi port = mem_CentroidsVector offset = slave bundle = gmem0 max_write_burst_length = 64 num_write_outstanding = 16
-#pragma HLS INTERFACE m_axi port = oputCentroids_id offset = slave bundle = gmem0
+#pragma HLS INTERFACE m_axi port = mem_xqVector offset = slave bundle = gmem max_read_burst_length = 64 num_read_outstanding = 16
+#pragma HLS INTERFACE m_axi port = mem_CentroidsVector offset = slave bundle = gmem max_write_burst_length = 64 num_write_outstanding = 16
+#pragma HLS INTERFACE m_axi port = oputCentroids_id offset = slave bundle = gmem
 #pragma HLS INTERFACE s_axilite port = mem_xqVector
 #pragma HLS INTERFACE s_axilite port = mem_CentroidsVector
 #pragma HLS INTERFACE s_axilite port = oputCentroids_id
