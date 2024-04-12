@@ -14,8 +14,9 @@ static void read_vector_dis(int* inL2DisList, hls::stream<int>& outL2dis_1, hls:
 {
     for(int i = 0; i < num_vecs; i++)
     {
-        outL2dis_1 << inL2DisList[i];
-        outL2dis_2 << inL2DisList[i];
+#pragma HLS PIPELINE II = 1
+        outL2dis_1.write_nb(inL2DisList[i]);
+        outL2dis_2.write_nb(inL2DisList[i]);
     }
 }
 
@@ -25,18 +26,21 @@ static void read_vector_dis(int* inL2DisList, hls::stream<int>& outL2dis_1, hls:
 static void parallel_sort(hls::stream<int>& outL2dis_1, hls::stream<int>& outL2dis_2, hls::stream<int>& sort_tmpStream, unsigned int num_vecs)
 {
     int sort_tmp;
-    int outL2dis_tmp;
+    int outL2dis_tmp_1, outL2dis_tmp_2;
 
     // parallel sorting
     for(int i = 0; i < num_vecs; i++)
     {
+#pragma HLS PIPELINE II = 1
         sort_tmp = 0;
-        outL2dis_tmp = outL2dis_1.read();
+        outL2dis_1.read_nb(outL2dis_tmp_1);
         for(int j = 0; j < num_vecs; j++)
         {
-            if(outL2dis_tmp < outL2dis_2.read()) sort_tmp += 1;
+#pragma HLS PIPELINE II = 1
+            outL2dis_2.read_nb(outL2dis_tmp_2);
+            if(outL2dis_tmp_1 < outL2dis_tmp_2) sort_tmp += 1;
         }
-        sort_tmpStream << sort_tmp;
+        sort_tmpStream.write_nb(sort_tmp);
     }
 }
 
@@ -47,12 +51,15 @@ static void select_topK(hls::stream<int>& sort_tmpStream, hls::stream<int>& loca
 {
     unsigned int needed_id = num_vecs - topk;
     unsigned int out_cent_idex = 0;
+    int sort_tmp;
 
     for(int i = 0; i < num_vecs; i++ )
     {
-        if(sort_tmpStream.read() >= needed_id)
+#pragma HLS PIPELINE II = 1
+        sort_tmpStream.read_nb(sort_tmp);
+        if(sort_tmp >= needed_id)
         {
-            local_topk_vector_id << i;
+            local_topk_vector_id.write_nb(i);
             out_cent_idex += 1;
             if(out_cent_idex >= topk) break;
         }
@@ -64,9 +71,13 @@ static void select_topK(hls::stream<int>& sort_tmpStream, hls::stream<int>& loca
 */
 static void write_topk_vector_id(int* ouTopkVecId, hls::stream<int>& local_topk_vector_id, unsigned int topk)
 {
+    int local_topk_vector_id_tmp;
+
     for(int i = 0; i < topk; i++ )
     {
-        ouTopkVecId[i] = local_topk_vector_id.read();
+#pragma HLS PIPELINE II = 1
+        local_topk_vector_id.read_nb(local_topk_vector_id_tmp);
+        ouTopkVecId[i] = local_topk_vector_id_tmp;
     }
 }
 

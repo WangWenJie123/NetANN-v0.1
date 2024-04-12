@@ -27,11 +27,11 @@ static void read_xq_vector(TYPE* mem_xqVector, int local_xqVector[MAX_VECTOR_DIM
 
     for(int i = 0; i < read_q_vec_times; i++)
     {
-#pragma HLS unroll factor=2
-
+#pragma HLS PIPELINE II = 1
         temp = mem_xqVector[i];
         for (int j = 0; j < 16; j++) 
         {
+#pragma HLS PIPELINE II = 1
             local_xqVector[i * 16 + j] = (temp >> (32 * j)) & 0xFFFFFFFF;
         }
     }
@@ -52,7 +52,8 @@ static void read_base_vector(TYPE* mem_CentroidsVector, hls::stream<int>& local_
             temp = mem_CentroidsVector[i * read_q_vec_times + j];
             for (int m = 0; m < 16; m++) 
             {
-                local_centroidsVector << ((temp >> (32 * m)) & 0xFFFFFFFF);
+#pragma HLS PIPELINE II = 1
+                local_centroidsVector.write_nb((temp >> (32 * m)) & 0xFFFFFFFF);
             }
         }
     }
@@ -64,18 +65,22 @@ static void read_base_vector(TYPE* mem_CentroidsVector, hls::stream<int>& local_
 static void compute_l2(int local_xqVector[MAX_VECTOR_DIM], hls::stream<int>& local_centroidsVector, unsigned int numCentroids, unsigned int dim, hls::stream<int>& outL2dis_1, hls::stream<int>& outL2dis_2, int outL2dis[MAX_CENTROIDS_NUM])
 {
     int outL2dis_tmp;
+    int local_centroidsVector_tmp;
 
     for(int i = 0; i < numCentroids; i++)
     {
+#pragma HLS PIPELINE II = 1
         outL2dis_tmp = 0;
         for(int j = 0; j < dim; j++)
         {
-            outL2dis_tmp += pow((local_xqVector[j] - local_centroidsVector.read()), 2);
+#pragma HLS PIPELINE II = 1
+            local_centroidsVector.read_nb(local_centroidsVector_tmp);
+            outL2dis_tmp += pow((local_xqVector[j] - local_centroidsVector_tmp), 2);
         }
         outL2dis_tmp = sqrt(outL2dis_tmp);
         outL2dis[i] = outL2dis_tmp;
-        outL2dis_1 << outL2dis_tmp;
-        outL2dis_2 << outL2dis_tmp;
+        outL2dis_1.write_nb(outL2dis_tmp);
+        outL2dis_2.write_nb(outL2dis_tmp);
     }
 }
 
@@ -85,18 +90,21 @@ static void compute_l2(int local_xqVector[MAX_VECTOR_DIM], hls::stream<int>& loc
 static void parallel_sort(hls::stream<int>& outL2dis_1, hls::stream<int>& outL2dis_2, hls::stream<int>& sort_tmpStream, unsigned int numCentroids)
 {
     int sort_tmp;
-    int outL2dis_tmp;
+    int outL2dis_tmp_1, outL2dis_tmp_2;
 
     // parallel sorting
     for(int i = 0; i < numCentroids; i++)
     {
+#pragma HLS PIPELINE II = 1
         sort_tmp = 0;
-        outL2dis_tmp = outL2dis_1.read();
+        outL2dis_1.read_nb(outL2dis_tmp_1);
         for(int j = 0; j < numCentroids; j++)
         {
-            if(outL2dis_tmp < outL2dis_2.read()) sort_tmp += 1;
+#pragma HLS PIPELINE II = 1
+            outL2dis_2.read_nb(outL2dis_tmp_2);
+            if(outL2dis_tmp_1 < outL2dis_tmp_2) sort_tmp += 1;
         }
-        sort_tmpStream << sort_tmp;
+        sort_tmpStream.write_nb(sort_tmp);
     }
 }
 
@@ -107,13 +115,16 @@ static void select_topK(hls::stream<int>& sort_tmpStream, hls::stream<int>& loca
 {
     unsigned int needed_id = numCentroids - nprobe;
     unsigned int out_cent_idex = 0;
+    int sort_tmp;
 
     for(int i = 0; i < numCentroids; i++ )
     {
-        if(sort_tmpStream.read() >= needed_id)
+#pragma HLS PIPELINE II = 1
+        sort_tmpStream.read_nb(sort_tmp);
+        if(sort_tmp >= needed_id)
         {
-            local_oputCentroids_id << i;
-            local_oputCentroids_id_tmp << i;
+            local_oputCentroids_id.write_nb(i);
+            local_oputCentroids_id_tmp.write_nb(i);
             out_cent_idex += 1;
             if(out_cent_idex >= nprobe) break;
         }
@@ -125,9 +136,13 @@ static void select_topK(hls::stream<int>& sort_tmpStream, hls::stream<int>& loca
 */
 static void write_topK_vectors_id(int* oputCentroids_id, hls::stream<int>& local_oputCentroids_id, unsigned int nprobe)
 {
+    int local_oputCentroids_id_tmp;
+
     for(int i = 0; i < nprobe; i++)
     {
-        oputCentroids_id[i] = local_oputCentroids_id.read();
+#pragma HLS PIPELINE II = 1
+        local_oputCentroids_id.read_nb(local_oputCentroids_id_tmp);
+        oputCentroids_id[i] = local_oputCentroids_id_tmp;
     }
 }
 
@@ -136,9 +151,13 @@ static void write_topK_vectors_id(int* oputCentroids_id, hls::stream<int>& local
 */
 static void write_topK_vectors_dis(int* out_topk_dis, int outL2dis[MAX_CENTROIDS_NUM], hls::stream<int>& local_oputCentroids_id_tmp, unsigned int nprobe)
 {
+    int local_oputCentroids_id_tmp_tmp;
+
     for(int i = 0; i < nprobe; i++)
     {
-        out_topk_dis[i] = outL2dis[local_oputCentroids_id_tmp.read()];
+#pragma HLS PIPELINE II = 1
+        local_oputCentroids_id_tmp.read_nb(local_oputCentroids_id_tmp_tmp);
+        out_topk_dis[i] = outL2dis[local_oputCentroids_id_tmp_tmp];
     }
 }
 
@@ -173,6 +192,7 @@ void search_topK_vec_top(TYPE* mem_xqVector, TYPE* mem_CentroidsVector, int* opu
     int local_xqVector[MAX_VECTOR_DIM];
     int outL2dis[MAX_CENTROIDS_NUM];
 
+#pragma HLS dataflow off
     read_xq_vector(mem_xqVector, local_xqVector, dim);
 
 #pragma HLS dataflow
