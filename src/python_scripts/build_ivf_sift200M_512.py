@@ -93,7 +93,7 @@ def get_invlist_sizes(invlists):
 # 使用示例
 learn_file_name = '/home/wwj/Vector_DB_Acceleration/SPTAG/wwj_test/remote_nvme_vector_datasets/sift1B/bigann_learn.bvecs'
 base_file_name = '/home/wwj/Vector_DB_Acceleration/SPTAG/wwj_test/remote_nvme_vector_datasets/sift1B/bigann_base.bvecs'
-output_file_name = '/home/wxr/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/fixed_ivflist/sift200M/sift200M_512_invlists_128dim_indexs_FIXED.csv'
+output_file_name = '/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/NetANN_Vector_Datasets/sift200M/sift200M_512_invlists_128dim_indexs_FIXED.csv'
 xb_learn = read_bvecs(learn_file_name)
 xb_base = read_bvecs_base(base_file_name)
 
@@ -105,6 +105,7 @@ nlist = 512
 quantizer = faiss.IndexFlatL2(d)  # the other index
 ivfindex = faiss.IndexIVFFlat(quantizer, d, nlist)
 
+faiss.omp_set_num_threads(64)
 ivfindex.train(xb_learn)
 ivfindex.add(xb_base)
 

@@ -3,10 +3,6 @@
 #include <hls_math.h>
 #include <hls_stream.h>
 
-#define MAX_NPROBE 4096
-#define MAX_TOPK 100
-#define MAX_VEC_NUM MAX_NPROBE * MAX_TOPK
-
 /*
  * read vector distance from fpga memory 
 */

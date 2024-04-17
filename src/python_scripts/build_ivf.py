@@ -60,19 +60,20 @@ def get_invlist_sizes(invlists):
     ], dtype='int64')
 
 # 使用示例
-learn_file_name = '/home/wxr/vector_dataset/sift1M/sift_learn.fvecs'
-base_file_name = '/home/wxr/vector_dataset/sift1M/sift_base.fvecs'
-output_file_name = '/home/wxr/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/fixed_ivflist/sift1M/sift1M_512_invlists_128dim_indexs_FIXED.csv'
+learn_file_name = '/home/wwj/Vector_DB_Acceleration/SPTAG/wwj_test/remote_nvme_vector_datasets/gist/gist_learn.fvecs'
+base_file_name = '/home/wwj/Vector_DB_Acceleration/SPTAG/wwj_test/remote_nvme_vector_datasets/gist/gist_base.fvecs'
+output_file_name = '/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/NetANN_Vector_Datasets/gist/gist_512_invlists_128dim_indexs_FIXED.csv'
 xb_learn = read_fvecs(learn_file_name)
 xb_base = read_fvecs(base_file_name)
 
-d = 128
+d = 960
 nb = int(xb_base.size / d)
 nlist = 512
 
 quantizer = faiss.IndexFlatL2(d)  # the other index
 ivfindex = faiss.IndexIVFFlat(quantizer, d, nlist)
 
+faiss.omp_set_num_threads(64)
 ivfindex.train(xb_learn)
 ivfindex.add(xb_base)
 

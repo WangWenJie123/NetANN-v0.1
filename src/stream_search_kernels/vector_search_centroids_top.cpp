@@ -5,9 +5,6 @@
 #include "hls_stream.h"
 
 #define MAX_VECTOR_DIM 1024
-#define MAX_NPROBE 4096
-#define MAX_CENTROIDS_NUM 4096
-
 #define DWIDTH 32
 
 auto constexpr DATA_WIDTH = 512;

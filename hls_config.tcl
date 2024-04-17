@@ -1,2 +1,3 @@
 config_interface -m_axi_auto_max_ports=true
 config_dataflow -default_channel fifo
+config_dataflow -disable_fifo_sizing_opt
