@@ -7,11 +7,10 @@
 #define MAX_VECTOR_DIM 1024
 #define DWIDTH 32
 
-auto constexpr DATA_WIDTH = 512;
+auto constexpr DATA_WIDTH = 1024;
 auto constexpr c_widthInBytes = DATA_WIDTH / 8;
 auto constexpr c_widthInInt = c_widthInBytes / 4;
 
-typedef ap_axiu<DWIDTH, 0, 0, 0> pkt;
 using TYPE = ap_int<DATA_WIDTH>;
 
 /*
@@ -26,10 +25,10 @@ static void read_xq_vector(TYPE* mem_xqVector, int local_xqVector[MAX_VECTOR_DIM
     {
 #pragma HLS PIPELINE II = 1
         temp = mem_xqVector[i];
-        for (int j = 0; j < 16; j++) 
+        for (int j = 0; j < 32; j++) 
         {
 #pragma HLS PIPELINE II = 1
-            local_xqVector[i * 16 + j] = (temp >> (32 * j)) & 0xFFFFFFFF;
+            local_xqVector[i * 32 + j] = (temp >> (32 * j)) & 0xFFFFFFFF;
         }
     }
 }
@@ -49,7 +48,7 @@ static void read_base_vector(TYPE* mem_CentroidsVector, hls::stream<int>& local_
         for(int j = 0; j < read_q_vec_times; j++)
         {
             temp = mem_CentroidsVector[i * read_q_vec_times + j];
-            for (int m = 0; m < 16; m++) 
+            for (int m = 0; m < 32; m++) 
             {
 #pragma HLS PIPELINE II = 1
                 local_centroidsVector.write_nb((temp >> (32 * m)) & 0xFFFFFFFF);
@@ -205,3 +204,4 @@ void search_topK_vec_top(TYPE* mem_xqVector, TYPE* mem_CentroidsVector, int* opu
     write_topK_vectors_id_distance(oputCentroids_id, out_topk_dis, outSelectedL2dis, local_oputCentroids_id, nprobe);
 }
 }
+

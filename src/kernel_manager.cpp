@@ -152,6 +152,8 @@ void searchTopK_KernelManager::Next()
 
             int tmp_curr_pong_ind = curr_pong_ind;
 
+            // std::chrono::high_resolution_clock::time_point xb_pipRead_start, xb_pipRead_end;
+            // xb_pipRead_start = std::chrono::high_resolution_clock::now();
             // 提交复制任务到队列中
             search_topK_vec_xbVector_pong_queue.enqueue([tmp_curr_pong_ind, this] {
                 // std::vector<int> vec_ids = invlist_index_csv.GetRow<int>(cluster_ids[tmp_curr_pong_ind]);
@@ -166,6 +168,9 @@ void searchTopK_KernelManager::Next()
                 // std::cout << "Pong Xb Copy Complete! Task Ind:" << tmp_curr_pong_ind << "\n";
                 xb_pong_ready = true;
             });
+            // xb_pipRead_end = std::chrono::high_resolution_clock::now();
+            // double xb_pipRead_Time = (double)(std::chrono::duration_cast<std::chrono::nanoseconds>(xb_pipRead_end - xb_pipRead_start).count());
+            // std::cout << "xb_pipRead excution latency:\t" << std::setprecision(3) << std::fixed << xb_pipRead_Time << " ns" << std::endl;
         }
     }
     // Compute
@@ -303,6 +308,8 @@ void searchTopK_KernelManager::Next()
             kernel_running_ping = false;
             kernel_running = true;
 
+            // std::chrono::high_resolution_clock::time_point search_topK_start, search_topK_end;
+            // search_topK_start = std::chrono::high_resolution_clock::now();
             kernel_queue.enqueue([this]{
 
                 kernel_running = true;
@@ -325,6 +332,9 @@ void searchTopK_KernelManager::Next()
                 result_dis_pong_ready = true;
                 kernel_running = false;
             });
+            // search_topK_end = std::chrono::high_resolution_clock::now();
+            // double search_topK_Time = (double)(std::chrono::duration_cast<std::chrono::nanoseconds>(search_topK_end - search_topK_start).count());
+            // std::cout << "search_topK_kernel excution latency:\t" << std::setprecision(3) << std::fixed << search_topK_Time << " ns" << std::endl;
         }
     }
     // Store

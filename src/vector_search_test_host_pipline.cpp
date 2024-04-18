@@ -41,13 +41,13 @@ struct taskInfo
 #define BENCHMARK_TEST
 
 
-#define TEST_SEARCH_VEC_NUM 8
+#define TEST_SEARCH_VEC_NUM 3
 std::string vector_dataset_path = "/home/wxr/vector_dataset/";
 std::string sift1M_xq_vec_fname = "sift_query.fvecs";
 std::string gist_xq_vec_fname = "gist_query.fvecs";
 std::string sift200M_xq_vec_fname = "bigann_query.bvecs";
 
-#define SEARCH_TOPK_VEC_KERNEL_NUM 6
+#define SEARCH_TOPK_VEC_KERNEL_NUM 8
 
 int main(int argc, char *argv[])
 {
@@ -286,7 +286,9 @@ int main(int argc, char *argv[])
         searchTopK_KernelManager("3", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
         searchTopK_KernelManager("4", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
         searchTopK_KernelManager("5", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
-        searchTopK_KernelManager("6", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid)
+        searchTopK_KernelManager("6", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("7", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("8", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid)
     };
 
     for (size_t i = 0; i < TEST_SEARCH_VEC_NUM; i++)
@@ -332,7 +334,7 @@ int main(int argc, char *argv[])
         sort(taskInfos.begin(), taskInfos.end());
 
         // 设置searchTopk Managers Init
-        #pragma omp parallel for num_threads(SEARCH_TOPK_VEC_KERNEL_NUM)
+        // #pragma omp parallel for num_threads(SEARCH_TOPK_VEC_KERNEL_NUM)
         for (int j = 0; j < SEARCH_TOPK_VEC_KERNEL_NUM; j++)
         {
             // 分配kernel上计算的聚类
@@ -395,7 +397,7 @@ int main(int argc, char *argv[])
 
         while (kernel_complete_cnt != SEARCH_TOPK_VEC_KERNEL_NUM)
         {
-            #pragma omp parallel for num_threads(SEARCH_TOPK_VEC_KERNEL_NUM)
+            // #pragma omp parallel for num_threads(SEARCH_TOPK_VEC_KERNEL_NUM)
             for (int j = 0; j < SEARCH_TOPK_VEC_KERNEL_NUM; j++)
             {
                 if (kernel_complete[j])
@@ -450,9 +452,10 @@ int main(int argc, char *argv[])
         // std::cout << "Final selected topK nearest neighbor vector..." << std::endl;
         // for(int i = 0; i < TOPK; i++)
         // {
-        //     std::cout << "vector index= " << selected_cluster_topK_vecId[outTopK_vecId_map[i]] << ", ";
+        //     // std::cout << "vector index= " << selected_cluster_topK_vecId[outTopK_vecId_map[i]] << ", ";
+        //     std::cout << "vector index= " << outTopK_vecId_map[i] << ", ";
 
-        //     std::cout << std::dec << "vector dis= " << inTopK_disList_map[outTopK_vecId_map[i]] << ", ";
+        //     // std::cout << std::dec << "vector dis= " << inTopK_disList_map[outTopK_vecId_map[i]] << ", ";
 
         //     if(i % 8 == 0 && i != 0)
         //     {
