@@ -90,7 +90,7 @@ void distribute_topK_top(int* inL2DisList, int* ouTopkVecId, unsigned int nprobe
 #pragma HLS INTERFACE s_axilite port = topk
 #pragma HLS INTERFACE ap_ctrl_chain port = return
 
-#pragma HLS cache port=inL2DisList lines=64 depth=128 
+#pragma HLS cache port=inL2DisList lines=32 depth=128 
 
     static hls::stream<int> outL2dis_1("outL2dis_1");
     static hls::stream<int> outL2dis_2("outL2dis_2");

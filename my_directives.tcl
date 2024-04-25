@@ -1,1 +1,1 @@
-set_clock_uncertainty 0.0
+set_clock_uncertainty 0

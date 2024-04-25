@@ -17,6 +17,13 @@ with open(args.ivf_index_file, 'r') as f:
 
 assert len(invlists) == args.nlist
 
+i=0
+for invlist in invlists:
+    i = i + 1
+    if invlist == '\n':
+        print(i)
+        invlists.remove(invlist)
+        
 # 转换聚类中心索引为int数组格式
 invlists = [[int(x) for x in invlist.split(',')] for invlist in invlists]
 

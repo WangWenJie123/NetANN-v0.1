@@ -41,13 +41,13 @@ struct taskInfo
 #define BENCHMARK_TEST
 
 
-#define TEST_SEARCH_VEC_NUM 3
-std::string vector_dataset_path = "/home/wxr/vector_dataset/";
+#define TEST_SEARCH_VEC_NUM 1
+std::string vector_dataset_path = "/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/nvme_vector_datasets/";
 std::string sift1M_xq_vec_fname = "sift_query.fvecs";
 std::string gist_xq_vec_fname = "gist_query.fvecs";
 std::string sift200M_xq_vec_fname = "bigann_query.bvecs";
 
-#define SEARCH_TOPK_VEC_KERNEL_NUM 8
+#define SEARCH_TOPK_VEC_KERNEL_NUM 10
 
 int main(int argc, char *argv[])
 {
@@ -288,7 +288,9 @@ int main(int argc, char *argv[])
         searchTopK_KernelManager("5", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
         searchTopK_KernelManager("6", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
         searchTopK_KernelManager("7", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
-        searchTopK_KernelManager("8", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid)
+        searchTopK_KernelManager("8", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("9", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("10", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid)
     };
 
     for (size_t i = 0; i < TEST_SEARCH_VEC_NUM; i++)

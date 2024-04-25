@@ -62,7 +62,7 @@ def get_invlist_sizes(invlists):
 # 使用示例
 learn_file_name = '/home/wwj/Vector_DB_Acceleration/SPTAG/wwj_test/remote_nvme_vector_datasets/gist/gist_learn.fvecs'
 base_file_name = '/home/wwj/Vector_DB_Acceleration/SPTAG/wwj_test/remote_nvme_vector_datasets/gist/gist_base.fvecs'
-output_file_name = '/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/NetANN_Vector_Datasets/gist/gist_512_invlists_128dim_indexs_FIXED.csv'
+output_file_name = '/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/NetANN_Vector_Datasets/gist/gist_512_invlists_960dim_indexs_FIXED.csv'
 xb_learn = read_fvecs(learn_file_name)
 xb_base = read_fvecs(base_file_name)
 

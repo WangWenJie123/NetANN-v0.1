@@ -7,7 +7,7 @@
 #define MAX_VECTOR_DIM 1024
 #define DWIDTH 32
 
-auto constexpr DATA_WIDTH = 1024;
+auto constexpr DATA_WIDTH = 512;
 auto constexpr c_widthInBytes = DATA_WIDTH / 8;
 auto constexpr c_widthInInt = c_widthInBytes / 4;
 
@@ -25,10 +25,10 @@ static void read_xq_vector(TYPE* mem_xqVector, int local_xqVector[MAX_VECTOR_DIM
     {
 #pragma HLS PIPELINE II = 1
         temp = mem_xqVector[i];
-        for (int j = 0; j < 32; j++) 
+        for (int j = 0; j < 16; j++) 
         {
 #pragma HLS PIPELINE II = 1
-            local_xqVector[i * 32 + j] = (temp >> (32 * j)) & 0xFFFFFFFF;
+            local_xqVector[i * 16 + j] = (temp >> (32 * j)) & 0xFFFFFFFF;
         }
     }
 }
@@ -46,7 +46,7 @@ static void read_centroids_vector(TYPE* mem_CentroidsVector, hls::stream<int>& l
         for(int j = 0; j < read_q_vec_times; j++)
         {
             temp = mem_CentroidsVector[i * read_q_vec_times + j];
-            for (int m = 0; m < 32; m++) 
+            for (int m = 0; m < 16; m++) 
             {
 #pragma HLS PIPELINE II = 1
                 local_centroidsVector.write_nb((temp >> (32 * m)) & 0xFFFFFFFF);
@@ -146,8 +146,8 @@ extern "C"
 void vector_search_centroids_top(TYPE* mem_xqVector, TYPE* mem_CentroidsVector, int* oputCentroids_id, unsigned int numCentroids, unsigned int dim, unsigned int nprobe
 )
 {
-#pragma HLS INTERFACE m_axi port = mem_xqVector offset = slave bundle = gmem0 max_read_burst_length = 64 num_read_outstanding = 16
-#pragma HLS INTERFACE m_axi port = mem_CentroidsVector offset = slave bundle = gmem1 max_write_burst_length = 64 num_write_outstanding = 16
+#pragma HLS INTERFACE m_axi port = mem_xqVector offset = slave bundle = gmem0 max_read_burst_length = 32 num_read_outstanding = 16
+#pragma HLS INTERFACE m_axi port = mem_CentroidsVector offset = slave bundle = gmem1 max_write_burst_length = 32 num_write_outstanding = 16
 #pragma HLS INTERFACE m_axi port = oputCentroids_id offset = slave bundle = gmem0
 #pragma HLS INTERFACE s_axilite port = mem_xqVector
 #pragma HLS INTERFACE s_axilite port = mem_CentroidsVector
@@ -157,8 +157,8 @@ void vector_search_centroids_top(TYPE* mem_xqVector, TYPE* mem_CentroidsVector, 
 #pragma HLS INTERFACE s_axilite port = nprobe
 #pragma HLS INTERFACE ap_ctrl_chain port = return
 
-#pragma HLS cache port=mem_xqVector lines=64 depth=128 
-#pragma HLS cache port=mem_CentroidsVector lines=64 depth=128 
+#pragma HLS cache port=mem_xqVector lines=32 depth=128 
+#pragma HLS cache port=mem_CentroidsVector lines=32 depth=128 
 
     static hls::stream<int> local_centroidsVector("local_centroidsVector");
     static hls::stream<int> outL2dis_1("outL2dis_1");

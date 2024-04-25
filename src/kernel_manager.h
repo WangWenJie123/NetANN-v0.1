@@ -10,7 +10,7 @@
 #include "rapidcsv.h"
 #include <atomic>
 
-#define MAX_SEARCHTOPK_VECS_NUM 100000
+#define MAX_SEARCHTOPK_VECS_NUM 860000
 
 enum class searchTopK_KernelManagerState {
     IDLE, EXCUTING
