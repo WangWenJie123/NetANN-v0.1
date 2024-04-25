@@ -47,7 +47,7 @@ std::string sift1M_xq_vec_fname = "sift_query.fvecs";
 std::string gist_xq_vec_fname = "gist_query.fvecs";
 std::string sift200M_xq_vec_fname = "bigann_query.bvecs";
 
-#define SEARCH_TOPK_VEC_KERNEL_NUM 10
+#define SEARCH_TOPK_VEC_KERNEL_NUM 12
 
 int main(int argc, char *argv[])
 {
@@ -290,7 +290,9 @@ int main(int argc, char *argv[])
         searchTopK_KernelManager("7", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
         searchTopK_KernelManager("8", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
         searchTopK_KernelManager("9", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
-        searchTopK_KernelManager("10", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid)
+        searchTopK_KernelManager("10", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("11", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("12", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid)
     };
 
     for (size_t i = 0; i < TEST_SEARCH_VEC_NUM; i++)

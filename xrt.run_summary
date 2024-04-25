@@ -7,13 +7,17 @@
     "generation": {
         "this_file": "\/home\/wwj\/Vector_DB_Acceleration\/ref_projects\/GPU_FPGA_P2P_Test\/xrt.run_summary",
         "source": "vp",
-        "PID": "2760519",
-        "timestamp": "1714003283372"
+        "PID": "3196418",
+        "timestamp": "1714051337147"
     },
     "files": [
         {
             "name": "native_trace.csv",
             "type": "VP_TRACE"
+        },
+        {
+            "name": "summary.csv",
+            "type": "PROFILE_SUMMARY"
         }
     ]
 }
