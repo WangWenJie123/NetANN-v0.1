@@ -47,7 +47,7 @@ std::string sift1M_xq_vec_fname = "sift_query.fvecs";
 std::string gist_xq_vec_fname = "gist_query.fvecs";
 std::string sift200M_xq_vec_fname = "bigann_query.bvecs";
 
-#define SEARCH_TOPK_VEC_KERNEL_NUM 12
+#define SEARCH_TOPK_VEC_KERNEL_NUM 16
 
 int main(int argc, char *argv[])
 {
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
     {
         xq_vector_path = vector_dataset_path + parser.value("data_set") + std::string("/") + gist_xq_vec_fname;
     }
-    if (parser.value("data_set") == std::string("sift200M"))
+    if (parser.value("data_set") == std::string("sift200M") || parser.value("data_set") == std::string("sift500M"))
     {
         xq_vector_path = vector_dataset_path + parser.value("data_set") + std::string("/") + sift200M_xq_vec_fname;
     }
@@ -135,7 +135,13 @@ int main(int argc, char *argv[])
         index_map_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_indexmap.dat");
         cluster_nav_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_cluster_nav.dat");
     }
-    else if (parser.value("data_set") == "sift200M")
+    else if (parser.value("data_set") == "sift200M" || parser.value("data_set") == "sift500M")
+    {
+        xb_vector_features_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_xbVec_features_reorg.dat");
+        index_map_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_indexmap.dat");
+        cluster_nav_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_cluster_nav.dat");        
+    }
+    else if (parser.value("data_set") == "gist")
     {
         xb_vector_features_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_xbVec_features_reorg.dat");
         index_map_path = vector_dataset_path + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("/") + parser.value("data_set") + std::string("_") + parser.value("num_cluster") + std::string("_") + parser.value("dim") + std::string("dim_reorg_indexmap.dat");
@@ -292,7 +298,11 @@ int main(int argc, char *argv[])
         searchTopK_KernelManager("9", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
         searchTopK_KernelManager("10", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
         searchTopK_KernelManager("11", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
-        searchTopK_KernelManager("12", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid)
+        searchTopK_KernelManager("12", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("13", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("14", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("15", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid),
+        searchTopK_KernelManager("16", TOPK, VECTOR_DIM, parser.value("data_set"), xb_vector_features_fd, cluster_nav_data, inTopK_idList, inTopK_disList_map, cluster_size_data, fpgaDevice, vecSearCentroids_uuid)
     };
 
     for (size_t i = 0; i < TEST_SEARCH_VEC_NUM; i++)
@@ -338,7 +348,7 @@ int main(int argc, char *argv[])
         sort(taskInfos.begin(), taskInfos.end());
 
         // 设置searchTopk Managers Init
-        // #pragma omp parallel for num_threads(SEARCH_TOPK_VEC_KERNEL_NUM)
+        #pragma omp parallel for num_threads(SEARCH_TOPK_VEC_KERNEL_NUM)
         for (int j = 0; j < SEARCH_TOPK_VEC_KERNEL_NUM; j++)
         {
             // 分配kernel上计算的聚类
@@ -401,7 +411,7 @@ int main(int argc, char *argv[])
 
         while (kernel_complete_cnt != SEARCH_TOPK_VEC_KERNEL_NUM)
         {
-            // #pragma omp parallel for num_threads(SEARCH_TOPK_VEC_KERNEL_NUM)
+            #pragma omp parallel for num_threads(SEARCH_TOPK_VEC_KERNEL_NUM)
             for (int j = 0; j < SEARCH_TOPK_VEC_KERNEL_NUM; j++)
             {
                 if (kernel_complete[j])

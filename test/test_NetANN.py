@@ -6,11 +6,11 @@ import psutil
 import queue
 import subprocess
 
-csv_log_path = "/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/eva_logs/NetANN_gist_CPU_Usage_Power.csv"
-csv_log_title = ["dataset", "nprobe", "index_type", "processor", "cpu_usage/%", "cpu_power/w"]
+csv_log_path = "/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/eva_logs/NetANN_sift200M_performance.csv"
+csv_log_title = ["dataset", "nprobe", "index_type", "processor", "latency/ms", "throughput/ops", "cpu_usage/%", "cpu_power/w"]
 
-dataset = "gist"
-vec_dim = 960
+dataset = "sift200M"
+vec_dim = 128
 processor = "NetANN"
 index_type = "IVF512,Flat"
 
@@ -45,15 +45,16 @@ def main():
     csv_log_writer = csv.writer(csv_log_file)
     csv_log_writer.writerow(csv_log_title)
     
-    for lnprobe in range(8):
+    for lnprobe in range(4, 8):
         nprobe = 1 << lnprobe
-        
-        NetANN_Run_Commd = "../vector_search_test -x ../build_dir.hw.xilinx_u200_gen3x16_xdma_2_202110_1/vector_search_kernels.xclbin -d 0" \
+                
+        NetANN_Run_Commd = "../vector_search_test -x ../vector_search_kernels.xclbin -d 0" \
                             + " -s " + dataset \
                             + " -c 512" \
                             + " -m "  + str(vec_dim) \
                             + " -p " + str(nprobe) \
                             + " -k 1"
+        print(NetANN_Run_Commd)
         
         q = queue.Queue()
         ret_q = queue.Queue()
@@ -63,13 +64,21 @@ def main():
         cpu_monitor.start()
 
         result = subprocess.run(NetANN_Run_Commd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=1000000)
+        
+        c_output = result.stdout
+        latency_str = c_output.split('\n')[-2]
+        print(latency_str)
+        
+        latency_str = latency_str.split(' ')[-2]
+        latency = float(latency_str)
+        throughptu = 1000.0 / latency
             
         q.put(1)
         cpu_monitor.join()
         cpu_usage = ret_q.get()
         cpu_power = req_q_p.get()
         
-        csv_log_data = [dataset, nprobe, index_type, processor, cpu_usage, cpu_power]
+        csv_log_data = [dataset, nprobe, index_type, processor, latency, throughptu, cpu_usage, cpu_power]
         csv_log_writer.writerow(csv_log_data)
 
         print("cpu usage:", cpu_usage, "\tcpu power:", cpu_power, "W")

@@ -117,7 +117,7 @@ datasetInfo load_query_vec_data(const std::string &datasetName, const std::strin
 {
     datasetInfo info;
     int *vec_data_int = nullptr;
-    if (datasetName == "sift200M")
+    if (datasetName == "sift200M" || datasetName == "sift500M")
     {
         uint8_t *vec_data_bignn = load_bvecs_data(datasetPath.c_str(), &(info.vec_dim), &(info.vec_num));
         vec_data_int = (int *)malloc(sizeof(int) * info.vec_num * info.vec_dim);
