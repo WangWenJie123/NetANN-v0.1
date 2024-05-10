@@ -9,6 +9,7 @@
 #include "experimental/xrt_queue.h"
 #include "rapidcsv.h"
 #include <atomic>
+#include <time.h>
 
 // #define MAX_SEARCHTOPK_VECS_NUM 860000
 #define MAX_SEARCHTOPK_VECS_NUM 10000
@@ -113,6 +114,9 @@ private:
     std::atomic<bool> kernel_running_ping = false;
     bool last_kernel_submit_ping = false;
 
+    // kernel compute time
+    double kernel_compute_dnsduration = 0;
+
     void _Init_States();
     void _Set_Manager_State(searchTopK_KernelManagerState new_state);
     searchTopK_KernelManagerState _Get_Manager_State();
@@ -126,6 +130,9 @@ public:
     void Init(const std::vector<int>& tasks, const std::vector<int>& original_indexs, int* xq_vec_int); // 控制线程调用, 设置当前kernel的任务
     void Next(); // 控制线程调用，推进任务执行
     bool isEnd();
+
+    // get kernel compute time
+    double get_kernel_compute_time();
 };
 
 #endif

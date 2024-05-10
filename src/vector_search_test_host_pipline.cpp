@@ -91,16 +91,15 @@ int main(int argc, char *argv[])
     unsigned long clusters_vecLoad_Time;
     double clusters_vecLoad_dnsduration;
 
-    std::chrono::high_resolution_clock::time_point xbBase_vecLoad_Start, xbBase_vecLoad_End;
-    unsigned long xbBase_vecLoad_Time;
-    double xbBase_vecLoad_dnsduration;
-
     std::chrono::high_resolution_clock::time_point distribute_topK_Start, distribute_topK_End;
     unsigned long distribute_topK_Time;
     double distribute_topK_dnsduration;
 
     double avg_e2e_dnsduration_sum;
     double avg_search_dnsduration_sum;
+    double vector_move_dnsduration_sum;
+
+    double search_topK_vec_top_compute_time;
 
     // config running args
     parser.addSwitch("--xclbin_file", "-x", "input binary file string", "");
@@ -479,9 +478,17 @@ int main(int argc, char *argv[])
         // std::cout << std::endl;
         // std::cout << std::endl;
 
+        // get search_topK_vec_top compute time
+        for (int j = 0; j < SEARCH_TOPK_VEC_KERNEL_NUM; j++)
+        {
+            search_topK_vec_top_compute_time += vecTopkSearch_managers[j].get_kernel_compute_time();
+        }
+        
         // output e2e search latency
-        double e2e_latency = centroid_dnsduration + xbBase_vecLoad_dnsduration + search_topK_vec_dnsduration + distribute_topK_dnsduration;
-        double search_latency = centroid_dnsduration + search_topK_vec_dnsduration + distribute_topK_dnsduration;
+        double e2e_latency = centroid_dnsduration + search_topK_vec_dnsduration + distribute_topK_dnsduration;
+        double search_latency = centroid_dnsduration + search_topK_vec_top_compute_time + distribute_topK_dnsduration;
+        search_topK_vec_top_compute_time = 0;
+        double vector_move_latency = e2e_latency - search_latency;
 
         std::cout << "e2e latency: " << e2e_latency << " ns" << std::endl;
         std::cout << "e2e latency: " << e2e_latency / 1000 << " us" << std::endl;
@@ -491,9 +498,15 @@ int main(int argc, char *argv[])
         std::cout << "search latency: " << search_latency << " ns" << std::endl;
         std::cout << "search latency: " << search_latency / 1000 << " us" << std::endl;
         std::cout << "search latency: " << search_latency / 1000000 << " ms" << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "vector move latency: " << vector_move_latency << " ns" << std::endl;
+        std::cout << "vector move latency: " << vector_move_latency / 1000 << " us" << std::endl;
+        std::cout << "vector move latency: " << vector_move_latency / 1000000 << " ms" << std::endl;
 
         avg_e2e_dnsduration_sum += e2e_latency;
         avg_search_dnsduration_sum += search_latency;
+        vector_move_dnsduration_sum += vector_move_latency;
 
         sleep(1);
     }
@@ -507,6 +520,11 @@ int main(int argc, char *argv[])
     std::cout << "avg search latency: " << avg_search_dnsduration_sum / TEST_SEARCH_VEC_NUM << " ns" << std::endl;
     std::cout << "avg search latency: " << avg_search_dnsduration_sum / TEST_SEARCH_VEC_NUM / 1000 << " us" << std::endl;
     std::cout << "avg search latency: " << avg_search_dnsduration_sum / TEST_SEARCH_VEC_NUM / 1000000 << " ms" << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "avg vector move latency: " << vector_move_dnsduration_sum / TEST_SEARCH_VEC_NUM << " ns" << std::endl;
+    std::cout << "avg vector move latency: " << vector_move_dnsduration_sum / TEST_SEARCH_VEC_NUM / 1000 << " us" << std::endl;
+    std::cout << "avg vector move latency: " << vector_move_dnsduration_sum / TEST_SEARCH_VEC_NUM / 1000000 << " ms" << std::endl;
 
     close(cluster_features_fd);
     close(xb_vector_features_fd);

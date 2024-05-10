@@ -207,8 +207,13 @@ void searchTopK_KernelManager::Next()
                         kernel_run.set_arg(5, TOPK);
                         kernel_run.set_arg(6, search_topK_vec_out_topK_dis_pong);
 
+                        std::chrono::high_resolution_clock::time_point kernel_compute_start = std::chrono::high_resolution_clock::now();
                         kernel_run.start();
                         kernel_run.wait();
+                        std::chrono::high_resolution_clock::time_point kernel_compute_end = std::chrono::high_resolution_clock::now();
+                        unsigned long kernel_compute_Time = std::chrono::duration_cast<std::chrono::nanoseconds>(kernel_compute_end - kernel_compute_start).count();
+                        kernel_compute_dnsduration += (double)kernel_compute_Time;
+                        
                         // std::cout << "Complete searchTopk!\n";
                         xb_pong_ready = false;
                         result_id_pong_ready = true;
@@ -247,8 +252,12 @@ void searchTopK_KernelManager::Next()
                         kernel_run.set_arg(5, TOPK);
                         kernel_run.set_arg(6, search_topK_vec_out_topK_dis_ping);
 
+                        std::chrono::high_resolution_clock::time_point kernel_compute_start = std::chrono::high_resolution_clock::now();
                         kernel_run.start();
                         kernel_run.wait();
+                        std::chrono::high_resolution_clock::time_point kernel_compute_end = std::chrono::high_resolution_clock::now();
+                        unsigned long kernel_compute_Time = std::chrono::duration_cast<std::chrono::nanoseconds>(kernel_compute_end - kernel_compute_start).count();
+                        kernel_compute_dnsduration += (double)kernel_compute_Time;
 
                         // std::cout << "Complete searchTopk!\n";
                         xb_ping_ready = false;
@@ -287,8 +296,12 @@ void searchTopK_KernelManager::Next()
                 kernel_run.set_arg(5, TOPK);
                 kernel_run.set_arg(6, search_topK_vec_out_topK_dis_ping);
 
+                std::chrono::high_resolution_clock::time_point kernel_compute_start = std::chrono::high_resolution_clock::now();
                 kernel_run.start();
                 kernel_run.wait();
+                std::chrono::high_resolution_clock::time_point kernel_compute_end = std::chrono::high_resolution_clock::now();
+                unsigned long kernel_compute_Time = std::chrono::duration_cast<std::chrono::nanoseconds>(kernel_compute_end - kernel_compute_start).count();
+                kernel_compute_dnsduration += (double)kernel_compute_Time;
 
                 // std::cout << "Complete searchTopk!\n";
                 xb_ping_ready = false;
@@ -323,8 +336,12 @@ void searchTopK_KernelManager::Next()
                 kernel_run.set_arg(5, TOPK);
                 kernel_run.set_arg(6, search_topK_vec_out_topK_dis_pong);
 
+                std::chrono::high_resolution_clock::time_point kernel_compute_start = std::chrono::high_resolution_clock::now();
                 kernel_run.start();
                 kernel_run.wait();
+                std::chrono::high_resolution_clock::time_point kernel_compute_end = std::chrono::high_resolution_clock::now();
+                unsigned long kernel_compute_Time = std::chrono::duration_cast<std::chrono::nanoseconds>(kernel_compute_end - kernel_compute_start).count();
+                kernel_compute_dnsduration += (double)kernel_compute_Time;
 
                 // std::cout << "Complete searchTopk!\n";
                 xb_pong_ready = false;
@@ -491,4 +508,8 @@ void inline searchTopK_KernelManager::_Read_Xb_reorg(int *fpga_mem, int xb_fd, i
 bool searchTopK_KernelManager::isEnd()
 {
     return _Get_Manager_State() == searchTopK_KernelManagerState::IDLE;
+}
+double searchTopK_KernelManager::get_kernel_compute_time()
+{
+    return kernel_compute_dnsduration;
 }

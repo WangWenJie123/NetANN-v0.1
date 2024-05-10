@@ -6,10 +6,10 @@ import psutil
 import queue
 import subprocess
 
-csv_log_path = "/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/eva_logs/NetANN_sift200M_performance.csv"
+csv_log_path = "/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/eva_logs/NetANN_sift500M_performance.csv"
 csv_log_title = ["dataset", "nprobe", "index_type", "processor", "latency/ms", "throughput/ops", "cpu_usage/%", "cpu_power/w"]
 
-dataset = "sift200M"
+dataset = "sift500M"
 vec_dim = 128
 processor = "NetANN"
 index_type = "IVF512,Flat"
