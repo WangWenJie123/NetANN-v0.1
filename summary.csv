@@ -1,6 +1,6 @@
 Profile Summary
-Generated on: 2024-05-10 20:53:03
-Msec since Epoch: 1715345583988
+Generated on: 2024-05-13 15:58:51
+Msec since Epoch: 1715587131120
 Profiled application: vector_search_test
 Target platform: Xilinx
 Tool version: 2022.1
@@ -19,18 +19,18 @@ COLUMN:<html>Total<br>Time (ms)</html>,float,Total execution time (in ms),
 COLUMN:<html>Minimum<br>Time (ms)</html>,float,Minimum execution time (in ms),
 COLUMN:<html>Average<br>Time (ms)</html>,float,Average execution time (in ms),
 COLUMN:<html>Maximum<br>Time (ms)</html>,float,Maximum execution time (in ms),
-ENTRY:xrt::bo::address,133,1.12782,0.000415,0.00847982,0.091351,
-ENTRY:xrt::bo::bo,117,101.804,0.007502,0.870117,43.7448,
-ENTRY:xrt::bo::map,117,0.055619,0.00019,0.000475376,0.003607,
-ENTRY:xrt::bo::size,82,1.53432,0.00088,0.0187112,0.158941,
-ENTRY:xrt::bo::sync,82,4.21704,0.016967,0.0514273,0.155911,
-ENTRY:xrt::device::device,85,107.675,0.000256,1.26676,107.625,
-ENTRY:xrt::device::load_xclbin,1,76.9751,76.9751,76.9751,76.9751,
-ENTRY:xrt::kernel::group_id,117,0.085133,0.000258,0.000727632,0.005579,
-ENTRY:xrt::kernel::kernel,18,18.763,0.04789,1.04239,17.4479,
-ENTRY:xrt::run::run,18,0.440078,0.012503,0.0244488,0.051765,
-ENTRY:xrt::run::start,34,0.694105,0.005302,0.0204149,0.079407,
-ENTRY:xrt::run::wait,34,323.565,0.006762,9.51662,21.0607,
+ENTRY:xrt::bo::address,69,0.277687,0.000436,0.00402445,0.050928,
+ENTRY:xrt::bo::bo,117,89.1773,0.008229,0.762199,43.3015,
+ENTRY:xrt::bo::map,117,0.043262,0.000225,0.000369761,0.003452,
+ENTRY:xrt::bo::size,52,0.808644,0.0008,0.0155508,0.133327,
+ENTRY:xrt::bo::sync,52,2.30719,0.011381,0.0443691,0.192344,
+ENTRY:xrt::device::device,85,128.77,0.000296,1.51494,128.732,
+ENTRY:xrt::device::load_xclbin,1,61.3723,61.3723,61.3723,61.3723,
+ENTRY:xrt::kernel::group_id,117,0.058475,0.000309,0.000499786,0.003347,
+ENTRY:xrt::kernel::kernel,18,16.4841,0.034541,0.915785,15.5453,
+ENTRY:xrt::run::run,18,0.291322,0.010114,0.0161846,0.03622,
+ENTRY:xrt::run::start,18,0.211856,0.005365,0.0117698,0.01923,
+ENTRY:xrt::run::wait,18,0.605058,0.003202,0.0336143,0.055896,
 
 TITLE:Host Reads from Global Memory
 SECTION:Host Data Transfers,Host Reads from Global Memory
@@ -44,7 +44,7 @@ COLUMN:<html>Maximum<br>Time (ms)</html>,float,Maximum time of a single host rea
 COLUMN:<html>Minimum<br>Time (ms)</html>,float,Minimum time of a single host read,
 COLUMN:<html>Total<br>Time (ms)</html>,float,Combined time of all host reads,
 COLUMN:<html>Average<br>Time (ms)</html>,float,Average of read durations (in ms),
-ENTRY:64,0.128,0.004,0.0059375,0.11514,inf,0.156418,0.017126,3.30033,0.0515676,
+ENTRY:34,0.064,0.004,0.00576471,0.204384,inf,0.061217,0.011616,0.958979,0.0282053,
 
 TITLE:Host Writes to Global Memory
 SECTION:Host Data Transfers,Host Writes to Global Memory
@@ -58,7 +58,7 @@ COLUMN:<html>Maximum<br>Time (ms)</html>,float,Maximum time of a single host wri
 COLUMN:<html>Minimum<br>Time (ms)</html>,float,Minimum time of a single host write,
 COLUMN:<html>Total<br>Time (ms)</html>,float,Combined time of all host write,
 COLUMN:<html>Average<br>Time (ms)</html>,float,Average of write durations (in ms),
-ENTRY:18,3.84,0.128,3.63378,66.8493,inf,0.130713,0.024865,0.978439,0.0543577,
+ENTRY:18,0.512,0.064,0.487111,6.31746,inf,0.193607,0.022174,1.3879,0.0771056,
 
 TITLE:Top Memory Reads: Host from Global Memory
 SECTION:Host Data Transfers,Top Memory Reads
@@ -66,16 +66,16 @@ COLUMN:<html>Start<br>Time (ms)</html>,float,Start time of read transfer (in ms)
 COLUMN:<html>Buffer<br>Size (KB)</html>,float,Size of read transfer (in KB),
 COLUMN:<html>Duration (ms)</html>,float,Duration of read transfer (in ms),
 COLUMN:<html>Reading<br>Rate (MB/s)</html>,float,Transfer rate of reads: Reading Rate = (Buffer Size) / (Duration),
-ENTRY:440.785,0.004,0.156418,0.0255725,
-ENTRY:440.759,0.004,0.153689,0.0260266,
-ENTRY:440.854,0.004,0.130978,0.0305395,
-ENTRY:440.742,0.004,0.128613,0.0311011,
-ENTRY:440.93,0.004,0.128452,0.03114,
-ENTRY:440.207,0.004,0.119255,0.0335416,
-ENTRY:440.905,0.004,0.11785,0.0339415,
-ENTRY:440.838,0.004,0.112019,0.0357082,
-ENTRY:440.888,0.004,0.103313,0.0387173,
-ENTRY:440.798,0.004,0.094263,0.0424345,
+ENTRY:1169.07,0.004,0.061217,0.0653413,
+ENTRY:1169.07,0.004,0.05182,0.0771903,
+ENTRY:1185.27,0.004,0.048957,0.0817044,
+ENTRY:1185.65,0.004,0.045962,0.0870284,
+ENTRY:1185.35,0.004,0.043511,0.0919308,
+ENTRY:1185.55,0.004,0.043286,0.0924086,
+ENTRY:1185.44,0.004,0.041281,0.0968969,
+ENTRY:1179.9,0.004,0.03867,0.103439,
+ENTRY:1184.63,0.004,0.038123,0.104924,
+ENTRY:1187.28,0.004,0.037382,0.107003,
 
 TITLE:Top Memory Writes: Host to Global Memory
 SECTION:Host Data Transfers,Top Memory Writes
@@ -83,16 +83,16 @@ COLUMN:<html>Start<br>Time (ms)</html>,float,Start time of write transfer (in ms
 COLUMN:<html>Buffer<br>Size (KB)</html>,float,Size of write transfer (in KB),
 COLUMN:<html>Duration (ms)</html>,float,Duration of write transfer (in ms),
 COLUMN:<html>Writing<br>Rate (MB/s)</html>,float,Transfer rate of writes: Writing Rate = (Buffer Size) / (Duration),
-ENTRY:418.403,3.84,0.130713,29.3773,
-ENTRY:418.396,3.84,0.097441,39.4085,
-ENTRY:418.382,3.84,0.088457,43.4109,
-ENTRY:418.395,3.84,0.080345,47.7939,
-ENTRY:418.365,3.84,0.066624,57.6369,
-ENTRY:418.457,3.84,0.066424,57.8104,
-ENTRY:418.449,3.84,0.065059,59.0233,
-ENTRY:418.441,3.84,0.062509,61.4312,
-ENTRY:417.118,3.84,0.04255,90.2468,
-ENTRY:418.413,3.84,0.039697,96.7328,
+ENTRY:1157.14,0.512,0.193607,2.64453,
+ENTRY:1157.24,0.512,0.125594,4.07663,
+ENTRY:1157.23,0.512,0.114909,4.4557,
+ENTRY:1157.06,0.512,0.110684,4.62578,
+ENTRY:1157.15,0.512,0.092179,5.55441,
+ENTRY:1156.95,0.512,0.090923,5.63114,
+ENTRY:1157,0.512,0.090236,5.67401,
+ENTRY:1157.22,0.512,0.088346,5.7954,
+ENTRY:1157.22,0.512,0.078984,6.48233,
+ENTRY:1157.21,0.512,0.059314,8.63203,
 
 Guidance Parameters
 Parameter,Element,Value,
@@ -101,7 +101,7 @@ HBM_DEVICE,all,0,
 KDMA_DEVICE,all,0,
 P2P_DEVICE,all,0,
 TRACE_MEMORY,all,FIFO,
-APPLICATION_RUN_TIME_MS,all,2329.18,
+APPLICATION_RUN_TIME_MS,all,2588.63,
 XRT_INI_SETTING,opencl_summary,0,Generation of OpenCL summary report (deprecated)
 XRT_INI_SETTING,opencl_trace,0,Generation of trace of OpenCL APIs and memory transfers
 XRT_INI_SETTING,opencl_device_counter,0,Hardware counters added to OpenCL summary file (deprecated)
