@@ -1,3 +1,9 @@
+'''
+Author: Wenjie Wang
+Date: 2024-03-29 16:25:35
+LastEditors: Do not edit
+LastEditTime: 2024-07-29 16:24:01
+'''
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
@@ -45,6 +51,20 @@ def evaluate(index, xq, gt, k):
     i = 1
     while i <= k:
         recalls[i] = (I[:, :i] == gt[:, :1]).sum() / float(nq)
+        i *= 10
+
+    return (t1 - t0) * 1000.0 / nq, recalls
+
+def evaluate_without_recalls(index, xq, gt, k):
+    nq = xq.shape[0]
+    t0 = time.time()
+    D, I = index.search(xq, k)  # noqa: E741
+    t1 = time.time()
+
+    recalls = {}
+    i = 1
+    while i <= k:
+        recalls[i] = 100
         i *= 10
 
     return (t1 - t0) * 1000.0 / nq, recalls
