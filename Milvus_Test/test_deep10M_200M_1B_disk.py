@@ -1,4 +1,5 @@
 import sys
+sys.path.append(r"../Faiss_Test")
 import numpy as np
 import time
 import csv
@@ -6,6 +7,8 @@ import queue
 import psutil
 import threading
 import os
+import deep1B_text1B_dataset
+import subprocess
 
 from pymilvus import (
     connections,
@@ -21,26 +24,13 @@ from pymilvus import (
 #   4. create index
 #   5. search
 
-csv_log_path = '/home/wwj/Vector_DB_Acceleration/Milvus/eva_logs/'
+base10M_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/deep1B/base10M.fbin"
+base1B_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/deep1B/deep1B.fbin"
+groundtruth_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/deep1B/groundtruth-public10K.ibin"
+query_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/deep1B/query10K.fbin"
+
+csv_log_path = "/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/eva_logs/"
 csv_log_title = ["dataset", "nprobe", "index_type", "processor", "search_latency/ms", "throughput/QPS", "R_1", "R_10", "R_100", "cpu_usage/%"]
-
-sift1M_DATASET_PATH = '/home/wwj/Vector_DB_Acceleration/SPTAG/wwj_test/remote_nvme_vector_datasets/sift1M/'
-sift1M_learn_file = 'sift_learn.fvecs'
-sift1M_base_file = 'sift_base.fvecs'
-sift1M_query_file = 'sift_query.fvecs'
-sift1M_gt_file = 'sift_groundtruth.ivecs'
-
-gist_DATASET_PATH = '/home/wwj/Vector_DB_Acceleration/SPTAG/wwj_test/remote_nvme_vector_datasets/gist/'
-gist_learn_file = 'gist_learn.fvecs'
-gist_base_file = 'gist_base.fvecs'
-gist_query_file = 'gist_query.fvecs'
-gist_gt_file = 'gist_groundtruth.ivecs'
-
-sift200M_DATASET_PATH = '/home/wwj/Vector_DB_Acceleration/SPTAG/wwj_test/remote_nvme_vector_datasets/sift1B/'
-sift200M_learn_file = 'bigann_learn.bvecs'
-sift200M_base_file = 'bigann_base.bvecs'
-sift200M_query_file = 'bigann_query.bvecs'
-sift200M_gt_file = 'gnd/idx_1000M.ivecs'
 
 _HOST = '127.0.0.1'
 _PORT = '19530'
@@ -53,85 +43,9 @@ _VECTOR_FIELD_NAME = 'float_vector_field'
 _METRIC_TYPE = 'L2'
 _INDEX_TYPE = 'IVF_FLAT'
 
-NLIST_LIST = [512, 1024, 2048, 4096]
+# NLIST_LIST = [512, 1024, 2048, 4096]
+NLIST_LIST = [2048, 4096]
 NPROB_LIST = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
-
-vbSize = 1000000000
-
-# dataset read functions
-def ivecs_read(fname):
-    a = np.fromfile(fname, dtype='int32')
-    d = a[0]
-    return a.reshape(-1, d + 1)[:, 1:].copy()
-
-def fvecs_read(fname):
-    return ivecs_read(fname).view('float32')
-
-# dataset mmap functions
-def mmap_fvecs(fname):
-    x = np.memmap(fname, dtype='int32', mode='r')
-    d = x[0]
-    return x.view('float32').reshape(-1, d + 1)[:, 1:]
-
-def mmap_base_bvecs(fname):
-    x = np.memmap(fname, dtype='uint8', mode='r')
-    d = x[:4].view('int32')[0]
-    return x.reshape(-1, d + 4)[:int(1000000000/5), 4:]
-
-def mmap_bvecs(fname):
-    x = np.memmap(fname, dtype='uint8', mode='r')
-    d = x[:4].view('int32')[0]
-    return x.reshape(-1, d + 4)[:, 4:]
-
-# def load_sift1M():
-def load_sift1M(sift_learn, sift_base, sift_query, sift_gt):
-    print("Loading sift1M...", end='', file=sys.stderr)
-    # xt = fvecs_read(sift_learn)
-    xb = fvecs_read(sift_base)
-    xq = fvecs_read(sift_query)
-    gt = ivecs_read(sift_gt)
-    print("done", file=sys.stderr)
-
-    return xb, xq, gt
-
-# def mmap_sift1M():
-def mmap_sift1M(sift_learn, sift_base, sift_query, sift_gt):
-    print("Mapping sift1M...", end='', file=sys.stderr)
-    # xt = mmap_fvecs(sift_learn)
-    xb = mmap_fvecs(sift_base)
-    xq = mmap_fvecs(sift_query)
-    gt = ivecs_read(sift_gt)
-    print("done", file=sys.stderr)
-
-    return xb, xq, gt
-
-def bvecs_read_base(fname, c_contiguous=True):
-   fv = np.fromfile(fname, dtype=np.byte)
-   if fv.size == 0:
-       return np.zeros(0, 0)
-   dim = fv.view(np.int32)[0]  # 更改数据类型为int32,且查看该数组的第一个维度
-   assert dim > 0
-   fv = fv.reshape(-1, 4+dim)    #
-   if not all(fv.view(np.int32)[:, 0] == dim):
-       raise IOError("Non-uniform vector sizes in " + fname)
-   fv = fv[:, 4:]
-   if c_contiguous:
-       fv = fv.copy()
-   return fv[0:int(vbSize/5), :]
-
-def bvecs_read_query(fname, c_contiguous=True):
-   fv = np.fromfile(fname, dtype=np.byte)
-   if fv.size == 0:
-       return np.zeros(0, 0)
-   dim = fv.view(np.int32)[0]  # 更改数据类型为int32,且查看该数组的第一个维度
-   assert dim > 0
-   fv = fv.reshape(-1, 4+dim)    #
-   if not all(fv.view(np.int32)[:, 0] == dim):
-       raise IOError("Non-uniform vector sizes in " + fname)
-   fv = fv[:, 4:]
-   if c_contiguous:
-       fv = fv.copy()
-   return fv
 
 # Create a Milvus connection
 def create_connection():
@@ -280,25 +194,30 @@ def main():
     xb = []
     xq = []
     gt = []
-    if(sys.argv[1] == 'sift1M'):
-        xb, xq, gt = mmap_sift1M(sift_base=sift1M_DATASET_PATH+sift1M_base_file, sift_query=sift1M_DATASET_PATH+sift1M_query_file, sift_learn=sift1M_DATASET_PATH+sift1M_learn_file, sift_gt=sift1M_DATASET_PATH+sift1M_gt_file)
+    if(sys.argv[1] == 'deep10M'):
+        xb = deep1B_text1B_dataset.read_fbin(filename=base10M_dataPath, start_idx=0, chunk_size=None)
+        xq = deep1B_text1B_dataset.read_fbin(filename=query_dataPath, start_idx=0, chunk_size=None)
+        gt = deep1B_text1B_dataset.read_ibin(filename=groundtruth_dataPath, start_idx=0, chunk_size=None)
+        print("xb_num: {}, xb_dim: {}".format(xb.shape[0], xb.shape[1]))
+        print("xq_num: {}, xq_dim: {}".format(xq.shape[0], xq.shape[1]))
         
-    if(sys.argv[1] == 'gist'):
-        xb, xq, gt = mmap_sift1M(sift_base=gist_DATASET_PATH+gist_base_file, sift_query=gist_DATASET_PATH+gist_query_file, sift_learn=gist_DATASET_PATH+gist_learn_file, sift_gt=gist_DATASET_PATH+gist_gt_file)
-        
-    if(sys.argv[1] == 'sift200M'):
-        xb = mmap_base_bvecs(sift200M_DATASET_PATH + sift200M_base_file)
-        xq = mmap_bvecs(sift200M_DATASET_PATH + sift200M_query_file)
-        gt = ivecs_read(sift200M_DATASET_PATH + sift200M_gt_file)
-        
-        xb = xb.astype(np.float32)
-        xq = xq.astype(np.float32)
+    if(sys.argv[1] == 'deep200M'):
+        xb = deep1B_text1B_dataset.read_fbin(filename=base1B_dataPath, start_idx=0, chunk_size=200000000)
+        xq = deep1B_text1B_dataset.read_fbin(filename=query_dataPath, start_idx=0, chunk_size=None)
+        gt = deep1B_text1B_dataset.read_ibin(filename=groundtruth_dataPath, start_idx=0, chunk_size=None)
+        print("xb_num: {}, xb_dim: {}".format(xb.shape[0], xb.shape[1]))
+        print("xq_num: {}, xq_dim: {}".format(xq.shape[0], xq.shape[1]))
     
     _NUM = xb.shape[0]
     _DIM = xb.shape[1]
     
     xq_num = xq.shape[0]
     xq_dim = xq.shape[1]
+    
+    print("***milvus testing start!***")
+    # start milvus standalone docker
+    start_command = 'bash ./standalone_embed.sh start'
+    process = subprocess.run(start_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=False)
 
     for _NLIST in NLIST_LIST:
         # create a connection
@@ -307,12 +226,10 @@ def main():
         # drop collection if the collection exists
         if has_collection(_COLLECTION_NAME):
             drop_collection(_COLLECTION_NAME)
-        if has_collection("sift1M"):
-            drop_collection("sift1M")
-        if has_collection("gist"):
-            drop_collection("gist")
-        if has_collection("sift200M"):
-            drop_collection("sift200M")
+        if has_collection("deep10M"):
+            drop_collection("deep10M")
+        if has_collection("deep200M"):
+            drop_collection("deep200M")
 
         # create collection
         collection = create_collection(_COLLECTION_NAME, _ID_FIELD_NAME, _VECTOR_FIELD_NAME, _DIM)
@@ -378,6 +295,15 @@ def main():
         drop_collection(_COLLECTION_NAME)
     
         csv_log_writer.writerow(['', '', '', '', '', '', '', '', '', ''])
+    
+    # stop Milvus
+    stop_command = 'bash ./standalone_embed.sh stop'
+    process = subprocess.run(stop_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=False)
+        
+    # delete Milvus data
+    delete_command = 'bash ./standalone_embed.sh delete'
+    process = subprocess.run(delete_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=False)
+    print("***milvus testing end!***")
     
 if __name__ == '__main__':
     main()
