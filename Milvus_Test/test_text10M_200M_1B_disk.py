@@ -24,10 +24,9 @@ from pymilvus import (
 #   4. create index
 #   5. search
 
-base10M_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/deep1B/base10M.fbin"
-base1B_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/deep1B/deep1B.fbin"
-groundtruth_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/deep1B/groundtruth-public10K.ibin"
-query_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/deep1B/query10K.fbin"
+base_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/text1B/local_nvme_text1B_base/base1B.fbin"
+groundtruth_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/text1B/groundtruth-public100K.ibin"
+query_dataPath = "/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/text1B/query100K.fbin"
 
 csv_log_path = "/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/eva_logs/"
 csv_log_title = ["dataset", "nprobe", "index_type", "processor", "search_latency/ms", "throughput/QPS", "R_1", "R_10", "R_100", "cpu_usage/%"]
@@ -193,15 +192,15 @@ def main():
     xb = []
     xq = []
     gt = []
-    if(sys.argv[1] == 'deep10M'):
-        xb = deep1B_text1B_dataset.read_fbin(filename=base10M_dataPath, start_idx=0, chunk_size=None)
+    if(sys.argv[1] == 'text10M'):
+        xb = deep1B_text1B_dataset.read_fbin(filename=base_dataPath, start_idx=0, chunk_size=10000000)
         xq = deep1B_text1B_dataset.read_fbin(filename=query_dataPath, start_idx=0, chunk_size=None)
         gt = deep1B_text1B_dataset.read_ibin(filename=groundtruth_dataPath, start_idx=0, chunk_size=None)
         print("xb_num: {}, xb_dim: {}".format(xb.shape[0], xb.shape[1]))
         print("xq_num: {}, xq_dim: {}".format(xq.shape[0], xq.shape[1]))
         
-    if(sys.argv[1] == 'deep200M'):
-        xb = deep1B_text1B_dataset.read_fbin(filename=base1B_dataPath, start_idx=0, chunk_size=200000000)
+    if(sys.argv[1] == 'text200M'):
+        xb = deep1B_text1B_dataset.read_fbin(filename=base_dataPath, start_idx=0, chunk_size=200000000)
         xq = deep1B_text1B_dataset.read_fbin(filename=query_dataPath, start_idx=0, chunk_size=None)
         gt = deep1B_text1B_dataset.read_ibin(filename=groundtruth_dataPath, start_idx=0, chunk_size=None)
         print("xb_num: {}, xb_dim: {}".format(xb.shape[0], xb.shape[1]))
@@ -225,10 +224,10 @@ def main():
         # drop collection if the collection exists
         if has_collection(_COLLECTION_NAME):
             drop_collection(_COLLECTION_NAME)
-        if has_collection("deep10M"):
-            drop_collection("deep10M")
-        if has_collection("deep200M"):
-            drop_collection("deep200M")
+        if has_collection("text10M"):
+            drop_collection("text10M")
+        if has_collection("text200M"):
+            drop_collection("text200M")
 
         # create collection
         collection = create_collection(_COLLECTION_NAME, _ID_FIELD_NAME, _VECTOR_FIELD_NAME, _DIM)
