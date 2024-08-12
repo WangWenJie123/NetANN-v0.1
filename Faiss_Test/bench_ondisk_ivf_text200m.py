@@ -24,9 +24,9 @@ csv_log_path = "/home/wwj/Vector_DB_Acceleration/ref_projects/GPU_FPGA_P2P_Test/
 dataset = "text200M"
 processor = "cpu"
 # index_type = "IVF512,Flat"
-# index_type = "IVF1024,Flat"
+index_type = "IVF1024,Flat"
 # index_type = "IVF2048,Flat"
-index_type = "IVF4096,Flat"
+# index_type = "IVF4096,Flat"
 csv_log_title = ["dataset", "nprobe", "index_type", "processor", "search_latency/ms", "throughput/QPS", "R_1", "R_10", "R_100", "cpu_usage/%"]
 
 class CPU_Monitor(threading.Thread):
@@ -46,7 +46,7 @@ class CPU_Monitor(threading.Thread):
 #  Main program
 #################################################################
 
-tmpdir = '/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/text1B/faiss_tarined_index/'
+tmpdir = '/home/wwj/Vector_DB_Acceleration/Vector_Datasets/Remote_Nvme_Vector_Datasets/text1B/faiss_tarined_index_750/'
 
 if 1:
     # train the index

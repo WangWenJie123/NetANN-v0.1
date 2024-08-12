@@ -42,7 +42,8 @@ _VECTOR_FIELD_NAME = 'float_vector_field'
 _METRIC_TYPE = 'L2'
 _INDEX_TYPE = 'IVF_FLAT'
 
-NLIST_LIST = [512, 1024, 2048, 4096]
+# NLIST_LIST = [512, 1024, 2048, 4096]
+NLIST_LIST = [2048, 4096]
 NPROB_LIST = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
 
 # Create a Milvus connection
@@ -84,7 +85,7 @@ def list_collections():
     print(utility.list_collections())
 
 def insert(collection, xb_num, xb_dim, xb_vector_data, xq_num, xq_dim, xq_vector_data):
-    batch_size = 10000
+    batch_size = 1000
     for batch in range(0, xb_num, batch_size):
         xb_data = [
             [i for i in range(batch, batch + batch_size)],
@@ -194,15 +195,15 @@ def main():
     gt = []
     if(sys.argv[1] == 'text10M'):
         xb = deep1B_text1B_dataset.read_fbin(filename=base_dataPath, start_idx=0, chunk_size=10000000)
-        xq = deep1B_text1B_dataset.read_fbin(filename=query_dataPath, start_idx=0, chunk_size=None)
-        gt = deep1B_text1B_dataset.read_ibin(filename=groundtruth_dataPath, start_idx=0, chunk_size=None)
+        xq = deep1B_text1B_dataset.read_fbin(filename=query_dataPath, start_idx=0, chunk_size=1000)
+        gt = deep1B_text1B_dataset.read_ibin(filename=groundtruth_dataPath, start_idx=0, chunk_size=1000)
         print("xb_num: {}, xb_dim: {}".format(xb.shape[0], xb.shape[1]))
         print("xq_num: {}, xq_dim: {}".format(xq.shape[0], xq.shape[1]))
         
     if(sys.argv[1] == 'text200M'):
         xb = deep1B_text1B_dataset.read_fbin(filename=base_dataPath, start_idx=0, chunk_size=200000000)
-        xq = deep1B_text1B_dataset.read_fbin(filename=query_dataPath, start_idx=0, chunk_size=None)
-        gt = deep1B_text1B_dataset.read_ibin(filename=groundtruth_dataPath, start_idx=0, chunk_size=None)
+        xq = deep1B_text1B_dataset.read_fbin(filename=query_dataPath, start_idx=0, chunk_size=1000)
+        gt = deep1B_text1B_dataset.read_ibin(filename=groundtruth_dataPath, start_idx=0, chunk_size=1000)
         print("xb_num: {}, xb_dim: {}".format(xb.shape[0], xb.shape[1]))
         print("xq_num: {}, xq_dim: {}".format(xq.shape[0], xq.shape[1]))
     
